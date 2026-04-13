@@ -38,6 +38,24 @@ export async function fetchProfileRequest() {
   return unwrapResponse(response)
 }
 
+export async function updateProfileRequest(payload) {
+  const response = await privateApi.put('/api/v1/user/profile', {
+    name: payload.name,
+  })
+
+  return unwrapResponse(response)
+}
+
+export async function changePasswordRequest(payload) {
+  const response = await privateApi.post('/api/v1/user/change-password', {
+    old_password: payload.currentPassword,
+    password: payload.newPassword,
+    repeat_password: payload.confirmPassword,
+  })
+
+  return unwrapResponse(response)
+}
+
 export async function refreshSessionRequest() {
   return refreshAccessToken()
 }

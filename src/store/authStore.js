@@ -1,14 +1,15 @@
 import { create } from 'zustand'
 import { setUnauthorizedHandler } from '../services/apiClient'
 import {
+  changePasswordRequest,
   fetchProfileRequest,
   logoutRequest,
   refreshSessionRequest,
   signInRequest,
   signUpRequest,
+  updateProfileRequest,
 } from '../services/authApi'
 import { clearAccessToken, getAccessToken } from '../services/tokenStorage'
-import { changePasswordRequest, updateProfileNameRequest } from '../services/mockApi'
 
 const initialFeedback = {
   status: 'idle',
@@ -19,6 +20,27 @@ let bootstrapPromise = null
 
 function getErrorMessage(error, fallbackMessage = 'Something went wrong.') {
   return error?.response?.data?.message ?? error?.message ?? fallbackMessage
+}
+
+function mergeUserProfile(nextUser, currentUser) {
+  if (!nextUser) return currentUser
+
+  return {
+    ...currentUser,
+    ...nextUser,
+    avatar:
+      nextUser.avatar ??
+      nextUser.avatar_url ??
+      nextUser.avatarUrl ??
+      nextUser.photo ??
+      nextUser.image ??
+      currentUser?.avatar ??
+      currentUser?.avatar_url ??
+      currentUser?.avatarUrl ??
+      currentUser?.photo ??
+      currentUser?.image ??
+      null,
+  }
 }
 
 function buildAuthenticatedState(user, token) {
@@ -125,10 +147,10 @@ export const useAuthStore = create((set, get) => ({
   updateProfileName: async (payload) => {
     set({ profileState: { status: 'loading', message: '' } })
     try {
-      const response = await updateProfileNameRequest(payload)
+      const response = await updateProfileRequest(payload)
       set({
-        user: response.data,
-        profileState: { status: 'success', message: response.message },
+        user: mergeUserProfile(response, get().user),
+        profileState: { status: 'success', message: 'Профиль обновлён.' },
       })
       return { ok: true }
     } catch (error) {
@@ -139,8 +161,8 @@ export const useAuthStore = create((set, get) => ({
   changePassword: async (payload) => {
     set({ passwordState: { status: 'loading', message: '' } })
     try {
-      const response = await changePasswordRequest(payload)
-      set({ passwordState: { status: 'success', message: response.message } })
+      await changePasswordRequest(payload)
+      set({ passwordState: { status: 'success', message: 'Пароль успешно изменён.' } })
       return { ok: true }
     } catch (error) {
       set({ passwordState: { status: 'error', message: getErrorMessage(error) } })

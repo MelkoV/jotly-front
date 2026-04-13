@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import { useAuthStore } from '../store/authStore'
@@ -32,7 +32,9 @@ function validateForm(formData) {
 
 export function SignUpPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { signUp, signUpState, resetSignUpState } = useAuthStore()
+  const redirectTo = location.state?.redirectTo ?? '/workspace'
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -62,7 +64,7 @@ export function SignUpPage() {
     const result = await signUp(formData)
     if (result.ok) {
       setErrors({})
-      navigate('/workspace', { replace: true })
+      navigate(redirectTo, { replace: true })
       return
     }
 
@@ -78,8 +80,8 @@ export function SignUpPage() {
   return (
     <PageSection
       eyebrow="Registration"
-      title="The signup flow now has the same confidence and polish as the rest of the product"
-      description="This page is designed to feel lighter, faster, and more intentional, with a cleaner onboarding moment for new users."
+      title="Регистрация"
+      description=""
     >
       <Grid container spacing={3} alignItems="stretch">
         <Grid size={{ xs: 12, md: 5 }}>
@@ -105,14 +107,11 @@ export function SignUpPage() {
               >
                 <RocketLaunchRoundedIcon color="secondary" />
               </Box>
-              <Typography variant="h3">Onboarding that looks product-grade from the first step</Typography>
+              <Typography variant="h3">Один шаг до удобной работы со списками</Typography>
               <Typography color="text.secondary">
-                Instead of a generic utility form, signup now feels like part of a thoughtfully designed SaaS journey.
+                Нам не нужна лишняя информация, и мы не шлем ненужные сообщения
               </Typography>
               <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                <Chip label="Short form" color="secondary" />
-                <Chip label="Clear hierarchy" />
-                <Chip label="Friendly validation" />
               </Stack>
             </Stack>
           </Paper>
@@ -123,14 +122,14 @@ export function SignUpPage() {
             <Paper elevation={0} className="surface-lift reveal-up reveal-up-delay-1" sx={{ width: 'min(580px, 100%)', p: { xs: 3, md: 4 } }}>
               <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
                 <Stack spacing={1}>
-                  <Typography variant="h3">Create account</Typography>
+                  <Typography variant="h3">Создать аккаунт</Typography>
                   <Typography color="text.secondary">
-                    Set up a new workspace identity and move directly into the redesigned profile and list experience.
+
                   </Typography>
                 </Stack>
 
                 <TextField
-                  label="Name"
+                  label="Имя"
                   value={formData.name}
                   onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
                   error={Boolean(errors.name)}
@@ -145,7 +144,7 @@ export function SignUpPage() {
                   helperText={errors.email}
                 />
                 <TextField
-                  label="Password"
+                  label="Пароль"
                   type="password"
                   value={formData.password}
                   onChange={(event) =>
@@ -155,7 +154,7 @@ export function SignUpPage() {
                   helperText={errors.password}
                 />
                 <TextField
-                  label="Confirm password"
+                  label="Еще раз пароль"
                   type="password"
                   value={formData.repeatPassword}
                   onChange={(event) =>
@@ -175,13 +174,18 @@ export function SignUpPage() {
                   disabled={signUpState.status === 'loading'}
                   endIcon={<PersonAddAltRoundedIcon />}
                 >
-                  {signUpState.status === 'loading' ? 'Creating account...' : 'Create account'}
+                  {signUpState.status === 'loading' ? 'Создаем...' : 'Создать аккаунт'}
                 </Button>
 
                 <Typography color="text.secondary">
-                  Already have an account?{' '}
-                  <Box component={NavLink} to="/sign-in" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                    Go to sign in
+                  Уже есть аккаунт?{' '}
+                  <Box
+                    component={NavLink}
+                    to="/sign-in"
+                    state={location.state}
+                    sx={{ color: 'primary.main', fontWeight: 700 }}
+                  >
+                    Тогда войдите в него
                   </Box>
                 </Typography>
               </Stack>

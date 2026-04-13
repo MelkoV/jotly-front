@@ -27,7 +27,7 @@ function validateName(name) {
 function validatePassword(payload) {
   const errors = {}
   if (!payload.currentPassword) errors.currentPassword = 'Enter your current password.'
-  if (payload.newPassword.length < 6) errors.newPassword = 'Use at least 6 characters.'
+  if (payload.newPassword.length < 8) errors.newPassword = 'Use at least 8 characters.'
   if (payload.confirmPassword !== payload.newPassword) {
     errors.confirmPassword = 'Passwords must match.'
   }
@@ -45,6 +45,13 @@ export function ProfilePage() {
     passwordState,
   } = useAuthStore()
   const currentUser = user ?? mockUser
+  const currentUserAvatar =
+    currentUser.avatar ??
+    currentUser.avatar_url ??
+    currentUser.avatarUrl ??
+    currentUser.photo ??
+    currentUser.image ??
+    ''
 
   const [name, setName] = useState(currentUser.name)
   const [nameError, setNameError] = useState('')
@@ -82,8 +89,8 @@ export function ProfilePage() {
   return (
     <PageSection
       eyebrow="Profile"
-      title="Account settings now read like a polished control panel instead of a generic form page"
-      description="The profile view uses stronger composition, cleaner grouping, and softer surface treatment to stay aligned with the rest of the product."
+      title="Настройки аккаунта"
+      description=""
     >
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -97,27 +104,25 @@ export function ProfilePage() {
             }}
           >
             <Stack spacing={2.5}>
-              <Avatar sx={{ width: 84, height: 84, bgcolor: 'primary.main', fontSize: 30 }}>
+              <Avatar
+                src={currentUserAvatar || undefined}
+                alt={currentUser.name}
+                sx={{ width: 84, height: 84, bgcolor: 'primary.main', fontSize: 30 }}
+              >
                 {currentUser.name.slice(0, 1)}
               </Avatar>
               <Box>
                 <Typography variant="h3">{currentUser.name}</Typography>
                 <Typography color="text.secondary">{currentUser.email}</Typography>
               </Box>
-              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                <Chip icon={<TuneRoundedIcon />} label="Workspace owner" color="primary" />
-                <Chip label="2 active flows" />
-              </Stack>
-              <Typography color="text.secondary">
-                This section gives the user a calm anchor before they update personal details or security settings.
-              </Typography>
+
               <Button
                 variant="outlined"
                 color="inherit"
                 startIcon={<LogoutRoundedIcon />}
                 onClick={handleSignOut}
               >
-                Sign out
+                Выйти
               </Button>
             </Stack>
           </Paper>
@@ -129,10 +134,10 @@ export function ProfilePage() {
               <Stack component="form" spacing={2.5} onSubmit={handleNameSubmit}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <PersonRoundedIcon color="primary" />
-                  <Typography variant="h3">Personal details</Typography>
+                  <Typography variant="h3">Информация</Typography>
                 </Stack>
                 <TextField
-                  label="Name"
+                  label="Имя"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   error={Boolean(nameError)}
@@ -141,7 +146,7 @@ export function ProfilePage() {
                 {profileState.status === 'error' ? <Alert severity="error">{profileState.message}</Alert> : null}
                 {profileState.status === 'success' ? <Alert severity="success">{profileState.message}</Alert> : null}
                 <Button type="submit" variant="contained" disabled={profileState.status === 'loading'}>
-                  {profileState.status === 'loading' ? 'Saving...' : 'Save name'}
+                  {profileState.status === 'loading' ? 'Сохраняем...' : 'Сохранить'}
                 </Button>
               </Stack>
             </Paper>
@@ -150,10 +155,10 @@ export function ProfilePage() {
               <Stack component="form" spacing={2.5} onSubmit={handlePasswordSubmit}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <VpnKeyRoundedIcon color="primary" />
-                  <Typography variant="h3">Security</Typography>
+                  <Typography variant="h3">Смена пароля</Typography>
                 </Stack>
                 <TextField
-                  label="Current password"
+                  label="Текущий пароль"
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(event) =>
@@ -163,7 +168,7 @@ export function ProfilePage() {
                   helperText={passwordErrors.currentPassword}
                 />
                 <TextField
-                  label="New password"
+                  label="Новый пароль"
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={(event) =>
@@ -173,7 +178,7 @@ export function ProfilePage() {
                   helperText={passwordErrors.newPassword}
                 />
                 <TextField
-                  label="Confirm new password"
+                  label="Еще раз новый пароль"
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(event) =>
@@ -185,7 +190,7 @@ export function ProfilePage() {
                 {passwordState.status === 'error' ? <Alert severity="error">{passwordState.message}</Alert> : null}
                 {passwordState.status === 'success' ? <Alert severity="success">{passwordState.message}</Alert> : null}
                 <Button type="submit" variant="contained" disabled={passwordState.status === 'loading'}>
-                  {passwordState.status === 'loading' ? 'Updating...' : 'Update password'}
+                  {passwordState.status === 'loading' ? 'Обновляем...' : 'Обновить пароль'}
                 </Button>
               </Stack>
             </Paper>

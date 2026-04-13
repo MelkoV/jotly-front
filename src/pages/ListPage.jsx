@@ -30,6 +30,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
 import templateIcon from '../assets/list-icons/list-kind-template.svg'
 import regularIcon from '../assets/list-icons/list-kind-regular.svg'
@@ -58,6 +59,10 @@ const listTypeMeta = {
     icon: todoIcon,
   },
   wish: {
+    label: 'Список желаний',
+    icon: wishIcon,
+  },
+  wishlist: {
     label: 'Список желаний',
     icon: wishIcon,
   },
@@ -118,10 +123,14 @@ function readSavedFilters() {
 function buildApiFilters(filters) {
   return {
     ...(filters.name.trim() ? { name: filters.name.trim() } : {}),
-    ...(filters.type ? { type: filters.type } : {}),
-    ...(typeof filters.isTemplate === 'boolean'
-      ? { is_template: filters.isTemplate }
+    ...(filters.type
+      ? { type: filters.type === 'wish' ? 'wishlist' : filters.type }
       : {}),
+    ...(filters.isTemplate === true
+      ? { template: 'template' }
+      : filters.isTemplate === false
+        ? { template: 'worksheet' }
+        : {}),
   }
 }
 
@@ -158,6 +167,7 @@ export function ListPage() {
     createState,
     resetCreateState,
   } = useListStore()
+  const navigate = useNavigate()
   const [filters, setFilters] = useState(() => readSavedFilters())
   const [page, setPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -254,9 +264,7 @@ export function ListPage() {
             <Box>
               <Typography variant="h3">Доступные списки</Typography>
               <Typography color="text.secondary">
-                {status === 'loading'
-                  ? 'Загружаем данные...'
-                  : 'Создавайте списки на все случаи жизни, делитесь с родными и друзьями для совметной работы'}
+                Создавайте списки на все случаи жизни, делитесь с родными и друзьями для совметной работы
               </Typography>
             </Box>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
@@ -368,118 +376,150 @@ export function ListPage() {
           >
             <Table sx={{ minWidth: { xs: '100%', sm: 720 }, tableLayout: { xs: 'auto', sm: 'fixed' } }}>
               <TableBody>
-                {items.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    hover
-                    sx={{
-                      transition: 'background-color 180ms ease',
-                      '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
-                      '&:last-child td': { borderBottom: 'none' },
-                    }}
-                  >
-                    <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-                      <Stack direction="row" spacing={{ xs: 1.25, sm: 1.5 }} alignItems="flex-start" sx={{ width: '100%' }}>
-                        <Avatar
-                          sx={{
-                            width: { xs: 34, sm: 40 },
-                            height: { xs: 34, sm: 40 },
-                            bgcolor: 'rgba(32, 101, 209, 0.12)',
-                            color: 'primary.main',
-                            fontSize: { xs: '0.78rem', sm: '0.9rem' },
-                            fontWeight: 800,
-                            flexShrink: 0,
-                          }}
+                {items.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={2}
+                      sx={{
+                        px: { xs: 1.5, sm: 2 },
+                        py: 5,
+                        textAlign: 'center',
+                        color: 'text.secondary',
+                        borderBottom: 'none',
+                      }}
+                    >
+                      Пока нет подходящих списков. Вы можете создать новый список.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      hover
+                      onClick={() => navigate(`/workspace/${item.id}`)}
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'background-color 180ms ease',
+                        '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
+                        '&:last-child td': { borderBottom: 'none' },
+                      }}
+                    >
+                      <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+                        <Stack
+                          direction="row"
+                          spacing={{ xs: 1.25, sm: 1.5 }}
+                          alignItems={item.description ? 'flex-start' : 'center'}
+                          sx={{ width: '100%' }}
                         >
-                          {getInitials(item.author)}
-                        </Avatar>
-                        <Stack spacing={0.55} sx={{ minWidth: 0, flex: 1, width: '100%' }}>
-                          <Typography
-                            variant="subtitle1"
-                            sx={{
-                              fontSize: { xs: '0.95rem', sm: '1rem' },
-                              whiteSpace: 'normal',
-                              overflowWrap: 'anywhere',
-                              wordBreak: 'break-word',
-                              hyphens: 'auto',
-                              lineHeight: 1.35,
-                            }}
-                          >
-                            {item.title}
-                          </Typography>
-                          {item.description ? (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
+                          <Tooltip title={item.author}>
+                            <Avatar
+                              src={item.avatar ?? undefined}
+                              alt={item.author}
                               sx={{
+                                width: { xs: 34, sm: 40 },
+                                height: { xs: 34, sm: 40 },
+                                bgcolor: 'rgba(32, 101, 209, 0.12)',
+                                color: 'primary.main',
+                                fontSize: { xs: '0.78rem', sm: '0.9rem' },
+                                fontWeight: 800,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {getInitials(item.author)}
+                            </Avatar>
+                          </Tooltip>
+                          <Stack
+                            spacing={item.description ? 0.55 : 0}
+                            justifyContent={item.description ? 'flex-start' : 'center'}
+                            sx={{ minWidth: 0, flex: 1, width: '100%' }}
+                          >
+                            <Typography
+                              variant="subtitle1"
+                              sx={{
+                                fontSize: { xs: '0.95rem', sm: '1rem' },
                                 whiteSpace: 'normal',
                                 overflowWrap: 'anywhere',
                                 wordBreak: 'break-word',
-                                lineHeight: 1.4,
+                                hyphens: 'auto',
+                                lineHeight: 1.35,
                               }}
                             >
-                              {item.description}
+                              {item.title}
                             </Typography>
-                          ) : null}
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ display: { xs: 'flex', sm: 'none' }, pt: 0.25 }}
-                          >
-                            <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
-                              <Box
-                                component="img"
-                                src={listTypeMeta[item.type]?.icon ?? todoIcon}
-                                alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
-                                sx={{ width: 22, height: 22, flexShrink: 0 }}
-                              />
-                            </Tooltip>
-                            <Tooltip
-                              title={
-                                item.isTemplate
-                                  ? listKindMeta.template.description
-                                  : listKindMeta.regular.description
-                              }
+                            {item.description ? (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  whiteSpace: 'normal',
+                                  overflowWrap: 'anywhere',
+                                  wordBreak: 'break-word',
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {item.description}
+                              </Typography>
+                            ) : null}
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              sx={{ display: { xs: 'flex', sm: 'none' }, pt: 0.25 }}
                             >
-                              <Box
-                                component="img"
-                                src={item.isTemplate ? templateIcon : regularIcon}
-                                alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
-                                sx={{ width: 22, height: 22, flexShrink: 0 }}
-                              />
-                            </Tooltip>
+                              <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
+                                <Box
+                                  component="img"
+                                  src={listTypeMeta[item.type]?.icon ?? todoIcon}
+                                  alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
+                                  sx={{ width: 22, height: 22, flexShrink: 0 }}
+                                />
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  item.isTemplate
+                                    ? listKindMeta.template.description
+                                    : listKindMeta.regular.description
+                                }
+                              >
+                                <Box
+                                  component="img"
+                                  src={item.isTemplate ? templateIcon : regularIcon}
+                                  alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
+                                  sx={{ width: 22, height: 22, flexShrink: 0 }}
+                                />
+                              </Tooltip>
+                            </Stack>
                           </Stack>
                         </Stack>
-                      </Stack>
-                    </TableCell>
-                    <TableCell sx={{ width: 92, display: { xs: 'none', sm: 'table-cell' }, px: 2 }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
-                          <Box
-                            component="img"
-                            src={listTypeMeta[item.type]?.icon ?? todoIcon}
-                            alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
-                            sx={{ width: 24, height: 24 }}
-                          />
-                        </Tooltip>
-                        <Tooltip
-                          title={
-                            item.isTemplate
-                              ? listKindMeta.template.description
-                              : listKindMeta.regular.description
-                          }
-                        >
-                          <Box
-                            component="img"
-                            src={item.isTemplate ? templateIcon : regularIcon}
-                            alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
-                            sx={{ width: 24, height: 24 }}
-                          />
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell sx={{ width: 92, display: { xs: 'none', sm: 'table-cell' }, px: 2 }}>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
+                            <Box
+                              component="img"
+                              src={listTypeMeta[item.type]?.icon ?? todoIcon}
+                              alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
+                              sx={{ width: 24, height: 24 }}
+                            />
+                          </Tooltip>
+                          <Tooltip
+                            title={
+                              item.isTemplate
+                                ? listKindMeta.template.description
+                                : listKindMeta.regular.description
+                            }
+                          >
+                            <Box
+                              component="img"
+                              src={item.isTemplate ? templateIcon : regularIcon}
+                              alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
+                              sx={{ width: 24, height: 24 }}
+                            />
+                          </Tooltip>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>

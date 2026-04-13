@@ -41,10 +41,17 @@ function normalizeListItem(item, fallbackPayload, currentUser) {
     item?.owner?.name ??
     currentUser?.name ??
     'Вы'
+  const avatar =
+    item?.author_avatar ??
+    item?.author_avatar_url ??
+    item?.authorAvatar ??
+    item?.owner_avatar ??
+    null
 
   return {
     id: item?.id ?? `local-${Date.now()}`,
     author,
+    avatar,
     date: item?.date ?? item?.touched_at ?? new Date().toISOString().slice(0, 10),
     title,
     status: item?.status ?? 'Draft',
@@ -65,7 +72,7 @@ function getListCollectionPayload(responseData) {
   if (Array.isArray(responseData?.data)) {
     return {
       items: responseData.data,
-      pagination: responseData,
+      pagination: responseData.meta ?? responseData,
     }
   }
 
@@ -112,7 +119,7 @@ export const useListStore = create((set) => ({
   message: '',
   pagination: {
     page: 1,
-    perPage: 2,
+    perPage: 50,
     total: 0,
     pageCount: 1,
   },

@@ -3,6 +3,8 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { useAuthStore } from '../store/authStore'
 import { LandingPage } from '../pages/LandingPage'
 import { ListPage } from '../pages/ListPage'
+import { ListDetailPage } from '../pages/ListDetailPage'
+import { PublicListInfoPage } from '../pages/PublicListInfoPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { ContactPage } from '../pages/ContactPage'
 import { SignInPage } from '../pages/SignInPage'
@@ -33,6 +35,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <LandingPage /> },
+      { path: 'j/:short_url', element: <PublicListInfoPage /> },
       { path: 'contact', element: <ContactPage /> },
       {
         element: <GuestOnlyRoute />,
@@ -45,6 +48,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: 'workspace', element: <ListPage /> },
+          { path: 'workspace/:id', element: <ListDetailPage /> },
           { path: 'profile', element: <ProfilePage /> },
         ],
       },

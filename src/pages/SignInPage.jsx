@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import { useAuthStore } from '../store/authStore'
@@ -32,7 +32,9 @@ function validateForm(formData) {
 
 export function SignInPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { signIn, signInState, resetSignInState } = useAuthStore()
+  const redirectTo = location.state?.redirectTo ?? '/workspace'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -58,7 +60,7 @@ export function SignInPage() {
     const result = await signIn(formData)
     if (result.ok) {
       setErrors({})
-      navigate('/workspace', { replace: true })
+      navigate(redirectTo, { replace: true })
       return
     }
 
@@ -71,8 +73,8 @@ export function SignInPage() {
   return (
     <PageSection
       eyebrow="Authentication"
-      title="Sign in now feels like part of the product, not a detached utility screen"
-      description="The login flow uses the same polished visual language as the rest of Jotly, with clearer hierarchy and calmer feedback states."
+      title="Вход в аккаунт"
+      description=""
     >
       <Grid container spacing={3} alignItems="stretch">
         <Grid size={{ xs: 12, md: 5 }}>
@@ -98,18 +100,11 @@ export function SignInPage() {
               >
                 <SecurityRoundedIcon color="primary" />
               </Box>
-              <Typography variant="h3">Fast entry, calm hierarchy, premium product feel</Typography>
+              <Typography variant="h3">Не передавайте данные третьим лицам</Typography>
               <Typography color="text.secondary">
-                The auth pages now inherit the same SaaS presentation as landing and workspace views, so the whole journey feels intentional.
+                А то они смогут прочитать все Ваши списки.
               </Typography>
-              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                <Chip icon={<AutoAwesomeRoundedIcon />} label="Soft glass surfaces" color="primary" />
-                <Chip label="Better feedback states" />
-                <Chip label="Mobile-friendly layout" />
-              </Stack>
-              <Typography variant="body2" color="text.secondary">
-                Authentication now works against the live API contract, including token refresh and silent session restore.
-              </Typography>
+
             </Stack>
           </Paper>
         </Grid>
@@ -119,9 +114,9 @@ export function SignInPage() {
             <Paper elevation={0} className="surface-lift reveal-up reveal-up-delay-1" sx={{ width: 'min(580px, 100%)', p: { xs: 3, md: 4 } }}>
               <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
                 <Stack spacing={1}>
-                  <Typography variant="h3">Welcome back</Typography>
+                  <Typography variant="h3">С возвращением</Typography>
                   <Typography color="text.secondary">
-                    Sign in with your account to restore access to the workspace and keep the session active in the background.
+                    Мы скучали.
                   </Typography>
                 </Stack>
 
@@ -134,7 +129,7 @@ export function SignInPage() {
                   helperText={errors.email}
                 />
                 <TextField
-                  label="Password"
+                  label="Пароль"
                   type="password"
                   value={formData.password}
                   onChange={(event) =>
@@ -154,13 +149,18 @@ export function SignInPage() {
                   disabled={signInState.status === 'loading'}
                   endIcon={<LoginRoundedIcon />}
                 >
-                  {signInState.status === 'loading' ? 'Signing in...' : 'Sign in'}
+                  {signInState.status === 'loading' ? 'Входим...' : 'Войти'}
                 </Button>
 
                 <Typography color="text.secondary">
-                  Need an account?{' '}
-                  <Box component={NavLink} to="/sign-up" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                    Create one
+                  Еще нет аккаунта?{' '}
+                  <Box
+                    component={NavLink}
+                    to="/sign-up"
+                    state={location.state}
+                    sx={{ color: 'primary.main', fontWeight: 700 }}
+                  >
+                    Его легко создать
                   </Box>
                 </Typography>
               </Stack>

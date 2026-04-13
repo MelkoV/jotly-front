@@ -14,6 +14,8 @@ import {
 } from '@mui/material'
 import { useState } from 'react'
 import { PageSection } from '../components/common/PageSection'
+import { mapApiFieldErrors } from '../services/apiValidation'
+import { createFeedbackRequest } from '../services/feedbackApi'
 
 function validateForm(formData) {
   const errors = {}
@@ -37,7 +39,7 @@ export function ContactPage() {
     message: '',
   })
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const nextErrors = validateForm(formData)
@@ -48,23 +50,39 @@ export function ContactPage() {
       return
     }
 
-    setSubmitState({
-      status: 'success',
-      message: 'Спасибо! Сообщение успешно отправлено.',
-    })
-    setFormData({
-      name: '',
-      email: '',
-      message: '',
-    })
-    setErrors({})
+    setSubmitState({ status: 'loading', message: '' })
+
+    try {
+      await createFeedbackRequest({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        message: formData.message.trim(),
+      })
+
+      setSubmitState({
+        status: 'success',
+        message: 'Спасибо! Сообщение успешно отправлено.',
+      })
+      setFormData({
+        name: '',
+        email: '',
+        message: '',
+      })
+      setErrors({})
+    } catch (error) {
+      setSubmitState({
+        status: 'error',
+        message: error?.response?.data?.message ?? error?.message ?? 'Не удалось отправить сообщение.',
+      })
+      setErrors(mapApiFieldErrors(error))
+    }
   }
 
   return (
     <PageSection
       eyebrow="Feedback"
-      title="A contact page with the same calm product feel as the registration flow"
-      description="This screen keeps the same polished split layout, but shifts the focus from onboarding to collecting thoughtful feedback from users."
+      title="Обратная связь"
+      description=""
     >
       <Grid container spacing={3} alignItems="stretch">
         <Grid size={{ xs: 12, md: 5 }}>
@@ -90,14 +108,12 @@ export function ContactPage() {
               >
                 <SupportAgentRoundedIcon color="primary" />
               </Box>
-              <Typography variant="h3">Share ideas, issues, and product feedback in one clear place</Typography>
+              <Typography variant="h3">Расскажите о своих идеях</Typography>
               <Typography color="text.secondary">
-                The layout mirrors the registration page so this contact moment feels like part of the same product journey.
+                Мы будем рады любой обратной связи.
               </Typography>
               <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
                 <Chip icon={<CampaignRoundedIcon />} label="Direct feedback" color="primary" />
-                <Chip label="Familiar layout" />
-                <Chip label="Clear message flow" />
               </Stack>
             </Stack>
           </Paper>
@@ -112,9 +128,9 @@ export function ContactPage() {
             >
               <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
                 <Stack spacing={1}>
-                  <Typography variant="h3">Contact us</Typography>
+                  <Typography variant="h3">Напишите нам</Typography>
                   <Typography color="text.secondary">
-                    Send your message and we will use it as the main feedback channel for the product.
+                    Мы обязательно прочитаем и ответим
                   </Typography>
                 </Stack>
 
@@ -143,10 +159,17 @@ export function ContactPage() {
                   helperText={errors.message}
                 />
 
+                {submitState.status === 'error' ? <Alert severity="error">{submitState.message}</Alert> : null}
                 {submitState.status === 'success' ? <Alert severity="success">{submitState.message}</Alert> : null}
 
-                <Button type="submit" variant="contained" size="large" endIcon={<MarkEmailUnreadRoundedIcon />}>
-                  Отправить сообщение
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  endIcon={<MarkEmailUnreadRoundedIcon />}
+                  disabled={submitState.status === 'loading'}
+                >
+                  {submitState.status === 'loading' ? 'Отправляем...' : 'Отправить сообщение'}
                 </Button>
               </Stack>
             </Paper>

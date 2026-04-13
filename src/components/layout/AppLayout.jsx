@@ -151,7 +151,7 @@ export function AppLayout() {
                   Jotly
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Team productivity, designed clearly
+                  Всё под рукой. Всё под контролем.
                 </Typography>
               </Box>
             </Stack>
