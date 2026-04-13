@@ -12,11 +12,13 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   MenuItem,
   Paper,
@@ -98,7 +100,7 @@ const priorityLabelMap = {
 
 const unitLabelMap = {
   thing: 'шт',
-  package: 'упаковка',
+  package: 'уп',
   kg: 'кг',
 }
 
@@ -110,6 +112,7 @@ const initialCreateFeedback = {
 const initialFormData = {
   name: '',
   description: '',
+  isCompleted: false,
   priority: '',
   deadline: '',
   unit: '',
@@ -293,6 +296,7 @@ function buildCreatePayload(listId, listType, formData) {
   const basePayload = {
     list_id: listId,
     name: formData.name.trim(),
+    is_completed: Boolean(formData.isCompleted),
     ...(formData.description.trim() ? { description: formData.description.trim() } : {}),
   }
 
@@ -530,6 +534,7 @@ export function ListDetailPage() {
     setFormData({
       name: item.name ?? '',
       description: item.description ?? '',
+      isCompleted: Boolean(item.isCompleted),
       priority: item.priority ?? '',
       deadline: normalizeDeadlineForInput(item.deadline),
       unit: item.unit ?? '',
@@ -1778,6 +1783,21 @@ export function ListDetailPage() {
                 multiline
                 minRows={3}
               />
+
+              {!isEditing && !isTemplateList ? (
+                <FormControlLabel
+                  sx={{ m: 0 }}
+                  control={
+                    <Checkbox
+                      checked={formData.isCompleted}
+                      onChange={(event) =>
+                        setFormData((prev) => ({ ...prev, isCompleted: event.target.checked }))
+                      }
+                    />
+                  }
+                  label="Сразу отметить выполненным"
+                />
+              ) : null}
 
               {listModel?.type === 'todo' ? (
                 <Stack spacing={2}>

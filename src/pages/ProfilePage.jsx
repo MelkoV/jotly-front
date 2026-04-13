@@ -103,7 +103,7 @@ export function ProfilePage() {
               background: 'linear-gradient(155deg, rgba(32, 101, 209, 0.1), rgba(255,255,255,0.82))',
             }}
           >
-            <Stack spacing={2.5}>
+            <Stack spacing={2.5} alignItems="center">
               <Avatar
                 src={currentUserAvatar || undefined}
                 alt={currentUser.name}
@@ -111,7 +111,7 @@ export function ProfilePage() {
               >
                 {currentUser.name.slice(0, 1)}
               </Avatar>
-              <Box>
+              <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h3">{currentUser.name}</Typography>
                 <Typography color="text.secondary">{currentUser.email}</Typography>
               </Box>
@@ -121,6 +121,7 @@ export function ProfilePage() {
                 color="inherit"
                 startIcon={<LogoutRoundedIcon />}
                 onClick={handleSignOut}
+                sx={{ width: '100%', maxWidth: 320 }}
               >
                 Выйти
               </Button>
