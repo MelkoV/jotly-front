@@ -33,7 +33,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import templateIcon from '../assets/list-icons/list-kind-template.svg'
 import regularIcon from '../assets/list-icons/list-kind-regular.svg'
@@ -505,7 +505,7 @@ export function ListDetailPage() {
     })
   }
 
-  const openCreateDialog = () => {
+  const openCreateDialog = useCallback(() => {
     if (!canEdit) return
 
     setFormData(initialFormData)
@@ -514,7 +514,7 @@ export function ListDetailPage() {
     setEditingItemId(null)
     setActionState('idle')
     setIsCreateDialogOpen(true)
-  }
+  }, [canEdit])
 
   const openEditListDialog = () => {
     if (!isOwner || !listModel?.id) return
@@ -528,7 +528,7 @@ export function ListDetailPage() {
     setIsEditListDialogOpen(true)
   }
 
-  const openEditDialog = (item) => {
+  const openEditDialog = useCallback((item) => {
     if (!canEdit) return
 
     setFormData({
@@ -547,7 +547,7 @@ export function ListDetailPage() {
     setEditingItemId(item.id)
     setActionState('idle')
     setIsCreateDialogOpen(true)
-  }
+  }, [canEdit])
 
   const closeCreateDialog = () => {
     if (createState.status === 'loading') return
@@ -885,6 +885,352 @@ export function ListDetailPage() {
     }
   }
 
+  const itemTableRows = useMemo(() => {
+    if (items.length === 0) {
+      return (
+        <TableRow>
+          <TableCell
+            colSpan={getEmptyStateColSpan(listModel?.type)}
+            sx={{
+              px: { xs: 1.5, sm: 2 },
+              py: 5,
+              textAlign: 'center',
+              color: 'text.secondary',
+              borderBottom: 'none',
+            }}
+          >
+            В этом списке пока нет элементов.
+          </TableCell>
+        </TableRow>
+      )
+    }
+
+    return items.map((item) => (
+      <TableRow
+        key={item.id}
+        hover
+        onClick={canEdit ? () => openEditDialog(item) : undefined}
+        sx={{
+          cursor: canEdit ? 'pointer' : 'default',
+          transition: 'background-color 180ms ease',
+          '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
+          '&:last-child td': { borderBottom: 'none' },
+        }}
+      >
+        <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Stack
+            direction="row"
+            spacing={{ xs: 1.25, sm: 1.5 }}
+            alignItems={item.description ? 'flex-start' : 'center'}
+          >
+            <Tooltip title={item.userName}>
+              <Avatar
+                src={item.userAvatar ?? undefined}
+                alt={item.userName}
+                sx={{
+                  width: { xs: 34, sm: 40 },
+                  height: { xs: 34, sm: 40 },
+                  bgcolor: 'rgba(32, 101, 209, 0.12)',
+                  color: 'primary.main',
+                  fontSize: { xs: '0.78rem', sm: '0.9rem' },
+                  fontWeight: 800,
+                  flexShrink: 0,
+                }}
+              >
+                {getInitials(item.userName)}
+              </Avatar>
+            </Tooltip>
+
+            <Stack
+              spacing={item.description ? 0.55 : 0}
+              justifyContent={item.description ? 'flex-start' : 'center'}
+              sx={{ minWidth: 0, flex: 1, width: '100%' }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontSize: { xs: '0.95rem', sm: '1rem' },
+                  color: item.isCompleted ? 'text.disabled' : 'text.primary',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  hyphens: 'auto',
+                  lineHeight: 1.35,
+                }}
+              >
+                {item.name}
+              </Typography>
+              {item.description ? (
+                <Typography
+                  variant="body2"
+                  color={item.isCompleted ? 'text.disabled' : 'text.secondary'}
+                  sx={{
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {item.description}
+                </Typography>
+              ) : null}
+              {listModel?.type !== 'todo' && listModel?.type !== 'shopping'
+                ? getItemMetaRows(item, listModel?.type).map((metaRow) => (
+                    <Typography key={`${item.id}-${metaRow}`} variant="caption" color="text.secondary">
+                      {metaRow}
+                    </Typography>
+                  ))
+                : null}
+              {listModel?.type === 'todo' ? (
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={{ xs: 0.75, sm: 1 }}
+                  useFlexGap
+                  sx={{ display: { xs: 'flex', sm: 'none' }, pt: item.description ? 0.35 : 0.1 }}
+                >
+                  {item.priority ? (
+                    <Chip
+                      label={priorityLabelMap[item.priority] ?? item.priority}
+                      size="small"
+                      color={item.isCompleted ? 'default' : getPriorityChipColor(item.priority)}
+                      variant={item.isCompleted ? 'outlined' : 'filled'}
+                      sx={
+                        item.isCompleted
+                          ? {
+                              alignSelf: 'flex-start',
+                              color: 'text.disabled',
+                              borderColor: 'rgba(145, 158, 171, 0.32)',
+                            }
+                          : { alignSelf: 'flex-start' }
+                      }
+                    />
+                  ) : null}
+                  {item.deadline ? (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: item.isCompleted
+                          ? 'text.disabled'
+                          : isToday(item.deadline)
+                            ? 'error.main'
+                            : 'text.secondary',
+                        fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
+                      }}
+                    >
+                      Дедлайн: {formatDeadline(item.deadline)}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              ) : null}
+              {listModel?.type === 'shopping' ? (
+                <Stack
+                  direction="column"
+                  spacing={0.45}
+                  sx={{ display: { xs: 'flex', sm: 'none' }, pt: item.description ? 0.35 : 0.1 }}
+                >
+                  {item.price !== null && item.price !== undefined && item.price !== '' ? (
+                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                      Цена: {item.price}
+                    </Typography>
+                  ) : null}
+                  {item.cost !== null && item.cost !== undefined && item.cost !== '' ? (
+                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                      Стоимость: {item.cost}
+                    </Typography>
+                  ) : null}
+                  {item.count !== null && item.count !== undefined && item.count !== '' ? (
+                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                      Количество: {item.count}
+                      {item.unit ? ` (${unitLabelMap[item.unit] ?? item.unit})` : ''}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              ) : null}
+            </Stack>
+          </Stack>
+        </TableCell>
+
+        {listModel?.type === 'todo' ? (
+          <TableCell align="center" sx={{ width: 150, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
+            {item.priority ? (
+              <Chip
+                label={priorityLabelMap[item.priority] ?? item.priority}
+                size="small"
+                color={item.isCompleted ? 'default' : getPriorityChipColor(item.priority)}
+                variant={item.isCompleted ? 'outlined' : 'filled'}
+                sx={
+                  item.isCompleted
+                    ? {
+                        color: 'text.disabled',
+                        borderColor: 'rgba(145, 158, 171, 0.32)',
+                      }
+                    : undefined
+                }
+              />
+            ) : null}
+          </TableCell>
+        ) : null}
+
+        {listModel?.type === 'todo' ? (
+          <TableCell align="center" sx={{ width: 140, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
+            {item.deadline ? (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: item.isCompleted
+                    ? 'text.disabled'
+                    : isToday(item.deadline)
+                      ? 'error.main'
+                      : 'text.secondary',
+                  fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
+                }}
+              >
+                {formatDeadline(item.deadline)}
+              </Typography>
+            ) : null}
+          </TableCell>
+        ) : null}
+
+        {listModel?.type === 'shopping' ? (
+          <TableCell align="center" sx={{ width: 110, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
+            {item.price !== null && item.price !== undefined && item.price !== '' ? (
+              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                {item.price}
+              </Typography>
+            ) : null}
+          </TableCell>
+        ) : null}
+
+        {listModel?.type === 'shopping' ? (
+          <TableCell align="center" sx={{ width: 120, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
+            {item.cost !== null && item.cost !== undefined && item.cost !== '' ? (
+              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                {item.cost}
+              </Typography>
+            ) : null}
+          </TableCell>
+        ) : null}
+
+        {listModel?.type === 'shopping' ? (
+          <TableCell align="center" sx={{ width: 120, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
+            {item.count !== null && item.count !== undefined && item.count !== '' ? (
+              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
+                {item.count}
+                {item.unit ? ` (${unitLabelMap[item.unit] ?? item.unit})` : ''}
+              </Typography>
+            ) : null}
+          </TableCell>
+        ) : null}
+
+        {!isTemplateList ? (
+          <TableCell align="center" sx={{ width: 80, px: 2 }}>
+            <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.75}>
+              <Tooltip title={item.isCompleted ? 'Выполнено' : 'Не выполнено'}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: item.isCompleted ? 'success.main' : 'text.secondary',
+                  }}
+                >
+                  {item.isCompleted ? (
+                    <CheckCircleRoundedIcon fontSize="small" />
+                  ) : (
+                    <RadioButtonUncheckedRoundedIcon fontSize="small" />
+                  )}
+                </Box>
+              </Tooltip>
+              {listModel?.type !== 'wishlist' && item.isCompleted && item.completedUserName ? (
+                <Tooltip title={item.completedUserName}>
+                  <Avatar
+                    src={item.completedUserAvatar ?? undefined}
+                    alt={item.completedUserName}
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      fontSize: '0.62rem',
+                      bgcolor: 'rgba(32, 101, 209, 0.12)',
+                      color: 'primary.main',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {getInitials(item.completedUserName)}
+                  </Avatar>
+                </Tooltip>
+              ) : null}
+            </Stack>
+          </TableCell>
+        ) : null}
+      </TableRow>
+    ))
+  }, [items, canEdit, openEditDialog, listModel?.type, isTemplateList])
+
+  const membersCards = useMemo(() => {
+    if (listModel?.type === 'wishlist' || members.length === 0) {
+      return null
+    }
+
+    return members.map((member) => (
+      <Paper
+        key={member.id}
+        variant="outlined"
+        sx={{
+          px: 1.5,
+          py: 1.25,
+          borderRadius: 3,
+          minWidth: { xs: '100%', sm: 220 },
+          flex: { xs: '1 1 100%', sm: '0 1 240px' },
+        }}
+      >
+        <Stack direction="row" spacing={1.25} alignItems="center">
+          <Avatar
+            src={member.avatar ?? undefined}
+            alt={member.name}
+            sx={{
+              width: 40,
+              height: 40,
+              bgcolor: 'rgba(32, 101, 209, 0.12)',
+              color: 'primary.main',
+              fontWeight: 800,
+              flexShrink: 0,
+            }}
+          >
+            {getInitials(member.name)}
+          </Avatar>
+
+          <Stack spacing={0.35} sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                whiteSpace: 'normal',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+                lineHeight: 1.3,
+              }}
+            >
+              {member.name}
+            </Typography>
+            {listModel?.type === 'shopping' ? (
+              <>
+                <Typography variant="caption" color="text.secondary">
+                  Покупок: {member.itemCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Потрачено: {member.sum}
+                </Typography>
+              </>
+            ) : null}
+            {listModel?.type === 'todo' ? (
+              <Typography variant="caption" color="text.secondary">
+                Выполнено: {member.itemCount}
+              </Typography>
+            ) : null}
+          </Stack>
+        </Stack>
+      </Paper>
+    ))
+  }, [members, listModel?.type])
+
   const handleLeaveList = async () => {
     if (!listModel?.id) return
 
@@ -1147,289 +1493,13 @@ export function ListDetailPage() {
                     ) : null}
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {items.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={getEmptyStateColSpan(listModel?.type)}
-                        sx={{
-                          px: { xs: 1.5, sm: 2 },
-                          py: 5,
-                          textAlign: 'center',
-                          color: 'text.secondary',
-                          borderBottom: 'none',
-                        }}
-                      >
-                        В этом списке пока нет элементов.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items.map((item) => (
-                      <TableRow
-                        key={item.id}
-                        hover
-                        onClick={canEdit ? () => openEditDialog(item) : undefined}
-                        sx={{
-                          cursor: canEdit ? 'pointer' : 'default',
-                          transition: 'background-color 180ms ease',
-                          '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
-                          '&:last-child td': { borderBottom: 'none' },
-                        }}
-                      >
-                        <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-                          <Stack
-                            direction="row"
-                            spacing={{ xs: 1.25, sm: 1.5 }}
-                            alignItems={item.description ? 'flex-start' : 'center'}
-                          >
-                            <Tooltip title={item.userName}>
-                              <Avatar
-                                src={item.userAvatar ?? undefined}
-                                alt={item.userName}
-                                sx={{
-                                  width: { xs: 34, sm: 40 },
-                                  height: { xs: 34, sm: 40 },
-                                  bgcolor: 'rgba(32, 101, 209, 0.12)',
-                                  color: 'primary.main',
-                                  fontSize: { xs: '0.78rem', sm: '0.9rem' },
-                                  fontWeight: 800,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {getInitials(item.userName)}
-                              </Avatar>
-                            </Tooltip>
-
-                            <Stack
-                              spacing={item.description ? 0.55 : 0}
-                              justifyContent={item.description ? 'flex-start' : 'center'}
-                              sx={{ minWidth: 0, flex: 1, width: '100%' }}
-                            >
-                              <Typography
-                                variant="subtitle1"
-                                sx={{
-                                  fontSize: { xs: '0.95rem', sm: '1rem' },
-                                  color: item.isCompleted ? 'text.disabled' : 'text.primary',
-                                  whiteSpace: 'normal',
-                                  overflowWrap: 'anywhere',
-                                  wordBreak: 'break-word',
-                                  hyphens: 'auto',
-                                  lineHeight: 1.35,
-                                }}
-                              >
-                                {item.name}
-                              </Typography>
-                              {item.description ? (
-                                <Typography
-                                  variant="body2"
-                                  color={item.isCompleted ? 'text.disabled' : 'text.secondary'}
-                                  sx={{
-                                    whiteSpace: 'normal',
-                                    overflowWrap: 'anywhere',
-                                    wordBreak: 'break-word',
-                                    lineHeight: 1.4,
-                                  }}
-                                >
-                                  {item.description}
-                                </Typography>
-                              ) : null}
-                              {listModel?.type !== 'todo' && listModel?.type !== 'shopping'
-                                ? getItemMetaRows(item, listModel?.type).map((metaRow) => (
-                                    <Typography key={`${item.id}-${metaRow}`} variant="caption" color="text.secondary">
-                                      {metaRow}
-                                    </Typography>
-                                  ))
-                                : null}
-                              {listModel?.type === 'todo' ? (
-                                <Stack
-                                  direction={{ xs: 'column', sm: 'row' }}
-                                  spacing={{ xs: 0.75, sm: 1 }}
-                                  useFlexGap
-                                  sx={{ display: { xs: 'flex', sm: 'none' }, pt: item.description ? 0.35 : 0.1 }}
-                                >
-                                  {item.priority ? (
-                                    <Chip
-                                      label={priorityLabelMap[item.priority] ?? item.priority}
-                                      size="small"
-                                      color={item.isCompleted ? 'default' : getPriorityChipColor(item.priority)}
-                                      variant={item.isCompleted ? 'outlined' : 'filled'}
-                                      sx={
-                                        item.isCompleted
-                                          ? {
-                                              alignSelf: 'flex-start',
-                                              color: 'text.disabled',
-                                              borderColor: 'rgba(145, 158, 171, 0.32)',
-                                            }
-                                          : { alignSelf: 'flex-start' }
-                                      }
-                                    />
-                                  ) : null}
-                                  {item.deadline ? (
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: item.isCompleted
-                                          ? 'text.disabled'
-                                          : isToday(item.deadline)
-                                            ? 'error.main'
-                                            : 'text.secondary',
-                                        fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
-                                      }}
-                                    >
-                                      Дедлайн: {formatDeadline(item.deadline)}
-                                    </Typography>
-                                  ) : null}
-                                </Stack>
-                              ) : null}
-                              {listModel?.type === 'shopping' ? (
-                                <Stack
-                                  direction="column"
-                                  spacing={0.45}
-                                  sx={{ display: { xs: 'flex', sm: 'none' }, pt: item.description ? 0.35 : 0.1 }}
-                                >
-                                  {item.price !== null && item.price !== undefined && item.price !== '' ? (
-                                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                      Цена: {item.price}
-                                    </Typography>
-                                  ) : null}
-                                  {item.cost !== null && item.cost !== undefined && item.cost !== '' ? (
-                                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                      Стоимость: {item.cost}
-                                    </Typography>
-                                  ) : null}
-                                  {item.count !== null && item.count !== undefined && item.count !== '' ? (
-                                    <Typography variant="caption" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                      Количество: {item.count}
-                                      {item.unit ? ` (${unitLabelMap[item.unit] ?? item.unit})` : ''}
-                                    </Typography>
-                                  ) : null}
-                                </Stack>
-                              ) : null}
-                            </Stack>
-                          </Stack>
-                        </TableCell>
-
-                        {listModel?.type === 'todo' ? (
-                          <TableCell align="center" sx={{ width: 150, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
-                            {item.priority ? (
-                              <Chip
-                                label={priorityLabelMap[item.priority] ?? item.priority}
-                                size="small"
-                                color={item.isCompleted ? 'default' : getPriorityChipColor(item.priority)}
-                                variant={item.isCompleted ? 'outlined' : 'filled'}
-                                sx={
-                                  item.isCompleted
-                                    ? {
-                                        color: 'text.disabled',
-                                        borderColor: 'rgba(145, 158, 171, 0.32)',
-                                      }
-                                    : undefined
-                                }
-                              />
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-
-                        {listModel?.type === 'todo' ? (
-                          <TableCell align="center" sx={{ width: 140, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
-                            {item.deadline ? (
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: item.isCompleted
-                                    ? 'text.disabled'
-                                    : isToday(item.deadline)
-                                      ? 'error.main'
-                                      : 'text.secondary',
-                                  fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
-                                }}
-                              >
-                                {formatDeadline(item.deadline)}
-                              </Typography>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-
-                        {listModel?.type === 'shopping' ? (
-                          <TableCell align="center" sx={{ width: 110, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
-                            {item.price !== null && item.price !== undefined && item.price !== '' ? (
-                              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                {item.price}
-                              </Typography>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-
-                        {listModel?.type === 'shopping' ? (
-                          <TableCell align="center" sx={{ width: 120, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
-                            {item.cost !== null && item.cost !== undefined && item.cost !== '' ? (
-                              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                {item.cost}
-                              </Typography>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-
-                        {listModel?.type === 'shopping' ? (
-                          <TableCell align="center" sx={{ width: 120, px: 2, display: { xs: 'none', sm: 'table-cell' } }}>
-                            {item.count !== null && item.count !== undefined && item.count !== '' ? (
-                              <Typography variant="body2" color={item.isCompleted ? 'text.disabled' : 'text.secondary'}>
-                                {item.count}
-                                {item.unit ? ` (${unitLabelMap[item.unit] ?? item.unit})` : ''}
-                              </Typography>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
-
-                        {!isTemplateList ? (
-                          <TableCell align="center" sx={{ width: 80, px: 2 }}>
-                            <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.75}>
-                              <Tooltip title={item.isCompleted ? 'Выполнено' : 'Не выполнено'}>
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: item.isCompleted ? 'success.main' : 'text.secondary',
-                                  }}
-                                >
-                                  {item.isCompleted ? (
-                                    <CheckCircleRoundedIcon fontSize="small" />
-                                  ) : (
-                                    <RadioButtonUncheckedRoundedIcon fontSize="small" />
-                                  )}
-                                </Box>
-                              </Tooltip>
-                              {listModel?.type !== 'wishlist' && item.isCompleted && item.completedUserName ? (
-                                <Tooltip title={item.completedUserName}>
-                                  <Avatar
-                                    src={item.completedUserAvatar ?? undefined}
-                                    alt={item.completedUserName}
-                                    sx={{
-                                      width: 20,
-                                      height: 20,
-                                      fontSize: '0.62rem',
-                                      bgcolor: 'rgba(32, 101, 209, 0.12)',
-                                      color: 'primary.main',
-                                      fontWeight: 800,
-                                    }}
-                                  >
-                                    {getInitials(item.completedUserName)}
-                                  </Avatar>
-                                </Tooltip>
-                              ) : null}
-                            </Stack>
-                          </TableCell>
-                        ) : null}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
+                <TableBody>{itemTableRows}</TableBody>
               </Table>
             </TableContainer>
           </Stack>
         </Paper>
 
-        {listModel?.type !== 'wishlist' && members.length > 0 ? (
+        {membersCards ? (
           <Paper
             elevation={0}
             className="reveal-up reveal-up-delay-2"
@@ -1437,68 +1507,7 @@ export function ListDetailPage() {
           >
             <Stack spacing={2}>
               <Typography variant="h3">Участники</Typography>
-
-              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                {members.map((member) => (
-                  <Paper
-                    key={member.id}
-                    variant="outlined"
-                    sx={{
-                      px: 1.5,
-                      py: 1.25,
-                      borderRadius: 3,
-                      minWidth: { xs: '100%', sm: 220 },
-                      flex: { xs: '1 1 100%', sm: '0 1 240px' },
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.25} alignItems="center">
-                      <Avatar
-                        src={member.avatar ?? undefined}
-                        alt={member.name}
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          bgcolor: 'rgba(32, 101, 209, 0.12)',
-                          color: 'primary.main',
-                          fontWeight: 800,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {getInitials(member.name)}
-                      </Avatar>
-
-                      <Stack spacing={0.35} sx={{ minWidth: 0 }}>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            whiteSpace: 'normal',
-                            overflowWrap: 'anywhere',
-                            wordBreak: 'break-word',
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {member.name}
-                        </Typography>
-                        {listModel?.type === 'shopping' ? (
-                          <>
-                            <Typography variant="caption" color="text.secondary">
-                              Покупок: {member.itemCount}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Потрачено: {member.sum}
-                            </Typography>
-                          </>
-                        ) : null}
-                        {listModel?.type === 'todo' ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Выполнено: {member.itemCount}
-                          </Typography>
-                        ) : null}
-                      </Stack>
-                    </Stack>
-                  </Paper>
-                ))}
-              </Stack>
+              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">{membersCards}</Stack>
             </Stack>
           </Paper>
         ) : null}

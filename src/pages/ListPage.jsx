@@ -169,6 +169,7 @@ export function ListPage() {
   } = useListStore()
   const navigate = useNavigate()
   const [filters, setFilters] = useState(() => readSavedFilters())
+  const [searchText, setSearchText] = useState(() => readSavedFilters().name)
   const [page, setPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [formData, setFormData] = useState(initialFormData)
@@ -180,6 +181,21 @@ export function ListPage() {
       filters: buildApiFilters(filters),
     })
   }, [fetchItems, filters, page])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setFilters((prev) => {
+        if (prev.name === searchText) {
+          return prev
+        }
+
+        return { ...prev, name: searchText }
+      })
+      setPage(1)
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [searchText])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -333,23 +349,21 @@ export function ListPage() {
               size="small"
               placeholder="Поиск"
               autoComplete="off"
-              value={filters.name}
+              value={searchText}
               onChange={(event) => {
-                setPage(1)
-                setFilters((prev) => ({ ...prev, name: event.target.value }))
+                setSearchText(event.target.value)
               }}
               inputProps={{ 'aria-label': 'Поиск' }}
               slotProps={{
                 input: {
-                  endAdornment: filters.name ? (
+                  endAdornment: searchText ? (
                     <InputAdornment position="end">
                       <IconButton
                         size="small"
                         edge="end"
                         aria-label="Очистить поиск"
                         onClick={() => {
-                          setPage(1)
-                          setFilters((prev) => ({ ...prev, name: '' }))
+                          setSearchText('')
                         }}
                       >
                         <CloseRoundedIcon fontSize="small" />
