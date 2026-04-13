@@ -29,7 +29,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
 import templateIcon from '../assets/list-icons/list-kind-template.svg'
@@ -155,6 +155,141 @@ function validateCreateForm(formData) {
   return errors
 }
 
+const CreateListDialog = memo(function CreateListDialog({
+  open,
+  onClose,
+  onSubmit,
+  submitState,
+}) {
+  const [formData, setFormData] = useState(initialFormData)
+  const [formErrors, setFormErrors] = useState({})
+
+  useEffect(() => {
+    if (!open) return
+
+    setFormData(initialFormData)
+    setFormErrors({})
+  }, [open])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    const nextErrors = validateCreateForm(formData)
+    setFormErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) return
+
+    const result = await onSubmit(formData)
+
+    if (!result?.ok && result?.fieldErrors) {
+      setFormErrors(result.fieldErrors)
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        component: 'form',
+        onSubmit: handleSubmit,
+        autoComplete: 'off',
+        sx: { borderRadius: 1.5 },
+      }}
+    >
+      <DialogTitle>Новый список</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <TextField
+            label="Название"
+            autoComplete="off"
+            value={formData.name}
+            onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+            error={Boolean(formErrors.name)}
+            helperText={formErrors.name}
+            autoFocus
+          />
+
+          <TextField
+            label="Описание"
+            autoComplete="off"
+            value={formData.description}
+            onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
+            error={Boolean(formErrors.description)}
+            helperText={formErrors.description}
+            multiline
+            minRows={3}
+          />
+
+          <Stack spacing={1}>
+            <Typography variant="subtitle1">Тип</Typography>
+            <ToggleButtonGroup
+              exclusive
+              value={formData.type}
+              onChange={(_, nextValue) => {
+                if (!nextValue) return
+
+                setFormData((prev) => ({ ...prev, type: nextValue }))
+                setFormErrors((prev) => ({ ...prev, type: '' }))
+              }}
+              color="primary"
+              sx={{
+                flexWrap: 'wrap',
+                gap: 1,
+                '& .MuiToggleButton-root': {
+                  borderRadius: 999,
+                  px: 2,
+                },
+              }}
+            >
+              <ToggleButton value="shopping">Покупки</ToggleButton>
+              <ToggleButton value="todo">Дела</ToggleButton>
+              <ToggleButton value="wish">Желания</ToggleButton>
+            </ToggleButtonGroup>
+            {formErrors.type ? (
+              <Typography variant="body2" color="error">
+                {formErrors.type}
+              </Typography>
+            ) : null}
+          </Stack>
+
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <FormControlLabel
+              sx={{ m: 0 }}
+              control={
+                <Checkbox
+                  checked={formData.isTemplate}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, isTemplate: event.target.checked }))
+                  }
+                />
+              }
+              label="Это шаблон"
+            />
+            <Tooltip title="В шаблоне нельзя отмечать элементы выполненными, но на его основе можно создавать новые списки">
+              <IconButton size="small" aria-label="Что такое шаблон?">
+                <HelpOutlineRoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+
+          {submitState.status === 'error' ? <Alert severity="error">{submitState.message}</Alert> : null}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} color="inherit" disabled={submitState.status === 'loading'}>
+          Отмена
+        </Button>
+        <Button type="submit" variant="contained" disabled={submitState.status === 'loading'}>
+          {submitState.status === 'loading' ? 'Создаем...' : 'Создать'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+})
+
 export function ListPage() {
   const {
     items,
@@ -172,8 +307,6 @@ export function ListPage() {
   const [searchText, setSearchText] = useState(() => readSavedFilters().name)
   const [page, setPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [formData, setFormData] = useState(initialFormData)
-  const [formErrors, setFormErrors] = useState({})
 
   useEffect(() => {
     void fetchItems({
@@ -208,8 +341,6 @@ export function ListPage() {
   }, [cancelFetchItems])
 
   const openCreateDialog = () => {
-    setFormData(initialFormData)
-    setFormErrors({})
     resetCreateState()
     setIsCreateDialogOpen(true)
   }
@@ -218,24 +349,15 @@ export function ListPage() {
     if (createState.status === 'loading') return
 
     setIsCreateDialogOpen(false)
-    setFormData(initialFormData)
-    setFormErrors({})
     resetCreateState()
   }
 
-  const handleCreateSubmit = async (event) => {
-    event.preventDefault()
-
-    const nextErrors = validateCreateForm(formData)
-    setFormErrors(nextErrors)
-
-    if (Object.keys(nextErrors).length > 0) return
-
+  const handleCreateSubmit = useCallback(async (nextFormData) => {
     const result = await createItem({
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      type: formData.type,
-      isTemplate: formData.isTemplate,
+      name: nextFormData.name.trim(),
+      description: nextFormData.description.trim(),
+      type: nextFormData.type,
+      isTemplate: nextFormData.isTemplate,
     })
 
     if (result.ok) {
@@ -248,17 +370,161 @@ export function ListPage() {
         setPage(1)
       }
       closeCreateDialog()
-      return
+      return { ok: true }
     }
 
-    const apiErrors = mapApiFieldErrors(result.error, {
+    return {
+      ok: false,
+      fieldErrors: mapApiFieldErrors(result.error, {
       is_template: 'isTemplate',
-    })
-
-    if (Object.keys(apiErrors).length > 0) {
-      setFormErrors(apiErrors)
+    }),
     }
-  }
+  }, [closeCreateDialog, createItem, fetchItems, filters, page])
+
+  const listRows = useMemo(() => {
+    if (items.length === 0) {
+      return (
+        <TableRow>
+          <TableCell
+            colSpan={2}
+            sx={{
+              px: { xs: 1.5, sm: 2 },
+              py: 5,
+              textAlign: 'center',
+              color: 'text.secondary',
+              borderBottom: 'none',
+            }}
+          >
+            Пока нет подходящих списков. Вы можете создать новый список.
+          </TableCell>
+        </TableRow>
+      )
+    }
+
+    return items.map((item) => (
+      <TableRow
+        key={item.id}
+        hover
+        onClick={() => navigate(`/workspace/${item.id}`)}
+        sx={{
+          cursor: 'pointer',
+          transition: 'background-color 180ms ease',
+          '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
+          '&:last-child td': { borderBottom: 'none' },
+        }}
+      >
+        <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Stack
+            direction="row"
+            spacing={{ xs: 1.25, sm: 1.5 }}
+            alignItems={item.description ? 'flex-start' : 'center'}
+            sx={{ width: '100%' }}
+          >
+            <Tooltip title={item.author}>
+              <Avatar
+                src={item.avatar ?? undefined}
+                alt={item.author}
+                sx={{
+                  width: { xs: 34, sm: 40 },
+                  height: { xs: 34, sm: 40 },
+                  bgcolor: 'rgba(32, 101, 209, 0.12)',
+                  color: 'primary.main',
+                  fontSize: { xs: '0.78rem', sm: '0.9rem' },
+                  fontWeight: 800,
+                  flexShrink: 0,
+                }}
+              >
+                {getInitials(item.author)}
+              </Avatar>
+            </Tooltip>
+            <Stack
+              spacing={item.description ? 0.55 : 0}
+              justifyContent={item.description ? 'flex-start' : 'center'}
+              sx={{ minWidth: 0, flex: 1, width: '100%' }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontSize: { xs: '0.95rem', sm: '1rem' },
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  hyphens: 'auto',
+                  lineHeight: 1.35,
+                }}
+              >
+                {item.title}
+              </Typography>
+              {item.description ? (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {item.description}
+                </Typography>
+              ) : null}
+              <Stack direction="row" spacing={1} sx={{ display: { xs: 'flex', sm: 'none' }, pt: 0.25 }}>
+                <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
+                  <Box
+                    component="img"
+                    src={listTypeMeta[item.type]?.icon ?? todoIcon}
+                    alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
+                    sx={{ width: 22, height: 22, flexShrink: 0 }}
+                  />
+                </Tooltip>
+                <Tooltip
+                  title={
+                    item.isTemplate
+                      ? listKindMeta.template.description
+                      : listKindMeta.regular.description
+                  }
+                >
+                  <Box
+                    component="img"
+                    src={item.isTemplate ? templateIcon : regularIcon}
+                    alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
+                    sx={{ width: 22, height: 22, flexShrink: 0 }}
+                  />
+                </Tooltip>
+              </Stack>
+            </Stack>
+          </Stack>
+        </TableCell>
+        <TableCell sx={{ width: 92, display: { xs: 'none', sm: 'table-cell' }, px: 2 }}>
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
+              <Box
+                component="img"
+                src={listTypeMeta[item.type]?.icon ?? todoIcon}
+                alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
+                sx={{ width: 24, height: 24 }}
+              />
+            </Tooltip>
+            <Tooltip
+              title={
+                item.isTemplate
+                  ? listKindMeta.template.description
+                  : listKindMeta.regular.description
+              }
+            >
+              <Box
+                component="img"
+                src={item.isTemplate ? templateIcon : regularIcon}
+                alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
+                sx={{ width: 24, height: 24 }}
+              />
+            </Tooltip>
+          </Stack>
+        </TableCell>
+      </TableRow>
+    ))
+  }, [items, navigate])
 
   return (
     <PageSection
@@ -390,152 +656,7 @@ export function ListPage() {
             }}
           >
             <Table sx={{ minWidth: { xs: '100%', sm: 720 }, tableLayout: { xs: 'auto', sm: 'fixed' } }}>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      sx={{
-                        px: { xs: 1.5, sm: 2 },
-                        py: 5,
-                        textAlign: 'center',
-                        color: 'text.secondary',
-                        borderBottom: 'none',
-                      }}
-                    >
-                      Пока нет подходящих списков. Вы можете создать новый список.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      hover
-                      onClick={() => navigate(`/workspace/${item.id}`)}
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'background-color 180ms ease',
-                        '&:hover': { backgroundColor: 'rgba(32, 101, 209, 0.04)' },
-                        '&:last-child td': { borderBottom: 'none' },
-                      }}
-                    >
-                      <TableCell sx={{ px: { xs: 1.5, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-                        <Stack
-                          direction="row"
-                          spacing={{ xs: 1.25, sm: 1.5 }}
-                          alignItems={item.description ? 'flex-start' : 'center'}
-                          sx={{ width: '100%' }}
-                        >
-                          <Tooltip title={item.author}>
-                            <Avatar
-                              src={item.avatar ?? undefined}
-                              alt={item.author}
-                              sx={{
-                                width: { xs: 34, sm: 40 },
-                                height: { xs: 34, sm: 40 },
-                                bgcolor: 'rgba(32, 101, 209, 0.12)',
-                                color: 'primary.main',
-                                fontSize: { xs: '0.78rem', sm: '0.9rem' },
-                                fontWeight: 800,
-                                flexShrink: 0,
-                              }}
-                            >
-                              {getInitials(item.author)}
-                            </Avatar>
-                          </Tooltip>
-                          <Stack
-                            spacing={item.description ? 0.55 : 0}
-                            justifyContent={item.description ? 'flex-start' : 'center'}
-                            sx={{ minWidth: 0, flex: 1, width: '100%' }}
-                          >
-                            <Typography
-                              variant="subtitle1"
-                              sx={{
-                                fontSize: { xs: '0.95rem', sm: '1rem' },
-                                whiteSpace: 'normal',
-                                overflowWrap: 'anywhere',
-                                wordBreak: 'break-word',
-                                hyphens: 'auto',
-                                lineHeight: 1.35,
-                              }}
-                            >
-                              {item.title}
-                            </Typography>
-                            {item.description ? (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  whiteSpace: 'normal',
-                                  overflowWrap: 'anywhere',
-                                  wordBreak: 'break-word',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {item.description}
-                              </Typography>
-                            ) : null}
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              sx={{ display: { xs: 'flex', sm: 'none' }, pt: 0.25 }}
-                            >
-                              <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
-                                <Box
-                                  component="img"
-                                  src={listTypeMeta[item.type]?.icon ?? todoIcon}
-                                  alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
-                                  sx={{ width: 22, height: 22, flexShrink: 0 }}
-                                />
-                              </Tooltip>
-                              <Tooltip
-                                title={
-                                  item.isTemplate
-                                    ? listKindMeta.template.description
-                                    : listKindMeta.regular.description
-                                }
-                              >
-                                <Box
-                                  component="img"
-                                  src={item.isTemplate ? templateIcon : regularIcon}
-                                  alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
-                                  sx={{ width: 22, height: 22, flexShrink: 0 }}
-                                />
-                              </Tooltip>
-                            </Stack>
-                          </Stack>
-                        </Stack>
-                      </TableCell>
-                      <TableCell sx={{ width: 92, display: { xs: 'none', sm: 'table-cell' }, px: 2 }}>
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Tooltip title={listTypeMeta[item.type]?.label ?? 'Тип списка'}>
-                            <Box
-                              component="img"
-                              src={listTypeMeta[item.type]?.icon ?? todoIcon}
-                              alt={listTypeMeta[item.type]?.label ?? 'Тип списка'}
-                              sx={{ width: 24, height: 24 }}
-                            />
-                          </Tooltip>
-                          <Tooltip
-                            title={
-                              item.isTemplate
-                                ? listKindMeta.template.description
-                                : listKindMeta.regular.description
-                            }
-                          >
-                            <Box
-                              component="img"
-                              src={item.isTemplate ? templateIcon : regularIcon}
-                              alt={item.isTemplate ? listKindMeta.template.label : listKindMeta.regular.label}
-                              sx={{ width: 24, height: 24 }}
-                            />
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
+              <TableBody>{listRows}</TableBody>
             </Table>
           </TableContainer>
 
@@ -555,106 +676,12 @@ export function ListPage() {
         </Stack>
       </Paper>
 
-      <Dialog
+      <CreateListDialog
         open={isCreateDialogOpen}
         onClose={closeCreateDialog}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleCreateSubmit,
-          autoComplete: 'off',
-          sx: { borderRadius: 1.5 },
-        }}
-      >
-        <DialogTitle>Новый список</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <TextField
-              label="Название"
-              autoComplete="off"
-              value={formData.name}
-              onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-              error={Boolean(formErrors.name)}
-              helperText={formErrors.name}
-              autoFocus
-            />
-
-            <TextField
-              label="Описание"
-              autoComplete="off"
-              value={formData.description}
-              onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
-              error={Boolean(formErrors.description)}
-              helperText={formErrors.description}
-              multiline
-              minRows={3}
-            />
-
-            <Stack spacing={1}>
-              <Typography variant="subtitle1">Тип</Typography>
-              <ToggleButtonGroup
-                exclusive
-                value={formData.type}
-                onChange={(_, nextValue) => {
-                  if (!nextValue) return
-
-                  setFormData((prev) => ({ ...prev, type: nextValue }))
-                  setFormErrors((prev) => ({ ...prev, type: '' }))
-                }}
-                color="primary"
-                sx={{
-                  flexWrap: 'wrap',
-                  gap: 1,
-                  '& .MuiToggleButton-root': {
-                    borderRadius: 999,
-                    px: 2,
-                  },
-                }}
-              >
-                <ToggleButton value="shopping">Покупки</ToggleButton>
-                <ToggleButton value="todo">Дела</ToggleButton>
-                <ToggleButton value="wish">Желания</ToggleButton>
-              </ToggleButtonGroup>
-              {formErrors.type ? (
-                <Typography variant="body2" color="error">
-                  {formErrors.type}
-                </Typography>
-              ) : null}
-            </Stack>
-
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <FormControlLabel
-                sx={{ m: 0 }}
-                control={
-                  <Checkbox
-                    checked={formData.isTemplate}
-                    onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, isTemplate: event.target.checked }))
-                    }
-                  />
-                }
-                label="Это шаблон"
-              />
-              <Tooltip title="В шаблоне нельзя отмечать элементы выполненными, но на его основе можно создавать новые списки">
-                <IconButton size="small" aria-label="Что такое шаблон?">
-                  <HelpOutlineRoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Stack>
-
-            {createState.status === 'error' ? <Alert severity="error">{createState.message}</Alert> : null}
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={closeCreateDialog} color="inherit" disabled={createState.status === 'loading'}>
-            Отмена
-          </Button>
-          <Button type="submit" variant="contained" disabled={createState.status === 'loading'}>
-            {createState.status === 'loading' ? 'Создаем...' : 'Создать'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleCreateSubmit}
+        submitState={createState}
+      />
     </PageSection>
   )
 }

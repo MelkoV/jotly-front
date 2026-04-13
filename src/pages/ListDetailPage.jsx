@@ -33,7 +33,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import templateIcon from '../assets/list-icons/list-kind-template.svg'
 import regularIcon from '../assets/list-icons/list-kind-regular.svg'
@@ -394,6 +394,90 @@ function buildPublicShareUrl(shortUrl) {
   return `${window.location.origin}/j/${shortUrl}`
 }
 
+const EditListDialog = memo(function EditListDialog({
+  open,
+  onClose,
+  initialValue,
+  onSubmit,
+  submitState,
+}) {
+  const [formData, setFormData] = useState(initialListFormData)
+  const [formErrors, setFormErrors] = useState({})
+
+  useEffect(() => {
+    if (!open) return
+
+    setFormData(initialValue ?? initialListFormData)
+    setFormErrors({})
+  }, [initialValue, open])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    const nextErrors = validateListForm(formData)
+    setFormErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) return
+
+    const result = await onSubmit(formData)
+
+    if (!result?.ok && result?.fieldErrors) {
+      setFormErrors(result.fieldErrors)
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        component: 'form',
+        onSubmit: handleSubmit,
+        autoComplete: 'off',
+        sx: { borderRadius: 1.5 },
+      }}
+    >
+      <DialogTitle>Редактировать список</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <TextField
+            label="Название"
+            autoComplete="off"
+            value={formData.name}
+            onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+            error={Boolean(formErrors.name)}
+            helperText={formErrors.name}
+            autoFocus
+          />
+
+          <TextField
+            label="Описание"
+            autoComplete="off"
+            value={formData.description}
+            onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
+            error={Boolean(formErrors.description)}
+            helperText={formErrors.description}
+            multiline
+            minRows={3}
+          />
+
+          {submitState.status === 'error' ? <Alert severity="error">{submitState.message}</Alert> : null}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} color="inherit" disabled={submitState.status === 'loading'}>
+          Отмена
+        </Button>
+        <Button type="submit" variant="contained" disabled={submitState.status === 'loading'}>
+          {submitState.status === 'loading' ? 'Сохраняем...' : 'Сохранить'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+})
+
 export function ListDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -410,8 +494,6 @@ export function ListDetailPage() {
   const [editingItemId, setEditingItemId] = useState(null)
   const [actionState, setActionState] = useState('idle')
   const [isEditListDialogOpen, setIsEditListDialogOpen] = useState(false)
-  const [editListFormData, setEditListFormData] = useState(initialListFormData)
-  const [editListFormErrors, setEditListFormErrors] = useState({})
   const [editListState, setEditListState] = useState(initialCreateFeedback)
   const [isDeleteListDialogOpen, setIsDeleteListDialogOpen] = useState(false)
   const [deleteListOptions, setDeleteListOptions] = useState(initialDeleteOptions)
@@ -519,11 +601,6 @@ export function ListDetailPage() {
   const openEditListDialog = () => {
     if (!isOwner || !listModel?.id) return
 
-    setEditListFormData({
-      name: listModel.name ?? '',
-      description: listModel.description ?? '',
-    })
-    setEditListFormErrors({})
     setEditListState(initialCreateFeedback)
     setIsEditListDialogOpen(true)
   }
@@ -564,8 +641,6 @@ export function ListDetailPage() {
     if (editListState.status === 'loading') return
 
     setIsEditListDialogOpen(false)
-    setEditListFormData(initialListFormData)
-    setEditListFormErrors({})
     setEditListState(initialCreateFeedback)
   }
 
@@ -722,31 +797,28 @@ export function ListDetailPage() {
     }
   }
 
-  const handleEditListSubmit = async (event) => {
-    event.preventDefault()
-
+  const handleEditListSubmit = async (nextFormData) => {
     if (!isOwner || !listModel?.id) return
-
-    const nextErrors = validateListForm(editListFormData)
-    setEditListFormErrors(nextErrors)
-
-    if (Object.keys(nextErrors).length > 0) return
 
     setEditListState({ status: 'loading', message: '' })
 
     try {
       await updateListRequest(listModel.id, {
-        name: editListFormData.name.trim(),
-        description: editListFormData.description.trim() || null,
+        name: nextFormData.name.trim(),
+        description: nextFormData.description.trim() || null,
       })
       await loadList()
       closeEditListDialog()
+      return { ok: true }
     } catch (error) {
       setEditListState({
         status: 'error',
         message: getErrorMessage(error, 'Не удалось обновить список.'),
       })
-      setEditListFormErrors(mapApiFieldErrors(error))
+      return {
+        ok: false,
+        fieldErrors: mapApiFieldErrors(error),
+      }
     }
   }
 
@@ -1704,58 +1776,16 @@ export function ListDetailPage() {
           </DialogActions>
         </Dialog>
 
-        <Dialog
+        <EditListDialog
           open={isEditListDialogOpen}
           onClose={closeEditListDialog}
-          fullWidth
-          maxWidth="sm"
-          PaperProps={{
-            component: 'form',
-            onSubmit: handleEditListSubmit,
-            autoComplete: 'off',
-            sx: { borderRadius: 1.5 },
+          initialValue={{
+            name: listModel?.name ?? '',
+            description: listModel?.description ?? '',
           }}
-        >
-          <DialogTitle>Редактировать список</DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={2.5} sx={{ pt: 1 }}>
-              <TextField
-                label="Название"
-                autoComplete="off"
-                value={editListFormData.name}
-                onChange={(event) =>
-                  setEditListFormData((prev) => ({ ...prev, name: event.target.value }))
-                }
-                error={Boolean(editListFormErrors.name)}
-                helperText={editListFormErrors.name}
-                autoFocus
-              />
-
-              <TextField
-                label="Описание"
-                autoComplete="off"
-                value={editListFormData.description}
-                onChange={(event) =>
-                  setEditListFormData((prev) => ({ ...prev, description: event.target.value }))
-                }
-                error={Boolean(editListFormErrors.description)}
-                helperText={editListFormErrors.description}
-                multiline
-                minRows={3}
-              />
-
-              {editListState.status === 'error' ? <Alert severity="error">{editListState.message}</Alert> : null}
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={closeEditListDialog} color="inherit" disabled={editListState.status === 'loading'}>
-              Отмена
-            </Button>
-            <Button type="submit" variant="contained" disabled={editListState.status === 'loading'}>
-              {editListState.status === 'loading' ? 'Сохраняем...' : 'Сохранить'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onSubmit={handleEditListSubmit}
+          submitState={editListState}
+        />
 
         <Dialog
           open={isCreateDialogOpen}
