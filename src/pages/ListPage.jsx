@@ -122,7 +122,7 @@ function readSavedFilters() {
 
 function buildApiFilters(filters) {
   return {
-    ...(filters.name.trim() ? { name: filters.name.trim() } : {}),
+    ...(filters.name.trim() ? { text: filters.name.trim() } : {}),
     ...(filters.type
       ? { type: filters.type === 'wish' ? 'wishlist' : filters.type }
       : {}),
@@ -332,6 +332,7 @@ export function ListPage() {
             <TextField
               size="small"
               placeholder="Поиск"
+              autoComplete="off"
               value={filters.name}
               onChange={(event) => {
                 setPage(1)
@@ -548,6 +549,7 @@ export function ListPage() {
         PaperProps={{
           component: 'form',
           onSubmit: handleCreateSubmit,
+          autoComplete: 'off',
           sx: { borderRadius: 1.5 },
         }}
       >
@@ -556,6 +558,7 @@ export function ListPage() {
           <Stack spacing={2.5} sx={{ pt: 1 }}>
             <TextField
               label="Название"
+              autoComplete="off"
               value={formData.name}
               onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
               error={Boolean(formErrors.name)}
@@ -565,6 +568,7 @@ export function ListPage() {
 
             <TextField
               label="Описание"
+              autoComplete="off"
               value={formData.description}
               onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
               error={Boolean(formErrors.description)}

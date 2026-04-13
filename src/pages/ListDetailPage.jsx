@@ -1044,6 +1044,23 @@ export function ListDetailPage() {
           </Stack>
         </Paper>
 
+        {listModel?.type === 'wishlist' ? (
+          <Paper
+            elevation={0}
+            className="reveal-up reveal-up-delay-1"
+            sx={{
+              p: { xs: 2.25, md: 2.75 },
+              borderRadius: 1,
+              background: 'linear-gradient(155deg, rgba(32, 101, 209, 0.06), rgba(255,255,255,0.92))',
+            }}
+          >
+            <Typography color="text.secondary">
+              В списке желаний никто не видит, кто что отметил, даже владелец. Будет виден сам факт
+              отметки, чтобы другие знали, какой пункт уже занят.
+            </Typography>
+          </Paper>
+        ) : null}
+
         <Paper
           elevation={0}
           className="reveal-up reveal-up-delay-1"
@@ -1377,7 +1394,7 @@ export function ListDetailPage() {
                                   )}
                                 </Box>
                               </Tooltip>
-                              {item.isCompleted && item.completedUserName ? (
+                              {listModel?.type !== 'wishlist' && item.isCompleted && item.completedUserName ? (
                                 <Tooltip title={item.completedUserName}>
                                   <Avatar
                                     src={item.completedUserAvatar ?? undefined}
@@ -1407,7 +1424,7 @@ export function ListDetailPage() {
           </Stack>
         </Paper>
 
-        {members.length > 0 ? (
+        {listModel?.type !== 'wishlist' && members.length > 0 ? (
           <Paper
             elevation={0}
             className="reveal-up reveal-up-delay-2"
@@ -1489,6 +1506,7 @@ export function ListDetailPage() {
           PaperProps={{
             component: 'form',
             onSubmit: handleCloneSubmit,
+            autoComplete: 'off',
             sx: { borderRadius: 1.5 },
           }}
         >
@@ -1497,6 +1515,7 @@ export function ListDetailPage() {
             <Stack spacing={2.5} sx={{ pt: 1 }}>
               <TextField
                 label="Название"
+                autoComplete="off"
                 value={cloneFormData.name}
                 onChange={(event) => setCloneFormData({ name: event.target.value })}
                 error={Boolean(cloneFormErrors.name)}
@@ -1679,6 +1698,7 @@ export function ListDetailPage() {
           PaperProps={{
             component: 'form',
             onSubmit: handleEditListSubmit,
+            autoComplete: 'off',
             sx: { borderRadius: 1.5 },
           }}
         >
@@ -1687,6 +1707,7 @@ export function ListDetailPage() {
             <Stack spacing={2.5} sx={{ pt: 1 }}>
               <TextField
                 label="Название"
+                autoComplete="off"
                 value={editListFormData.name}
                 onChange={(event) =>
                   setEditListFormData((prev) => ({ ...prev, name: event.target.value }))
@@ -1698,6 +1719,7 @@ export function ListDetailPage() {
 
               <TextField
                 label="Описание"
+                autoComplete="off"
                 value={editListFormData.description}
                 onChange={(event) =>
                   setEditListFormData((prev) => ({ ...prev, description: event.target.value }))
@@ -1729,6 +1751,7 @@ export function ListDetailPage() {
           PaperProps={{
             component: 'form',
             onSubmit: handleCreateSubmit,
+            autoComplete: 'off',
             sx: { borderRadius: 1.5 },
           }}
         >
@@ -1737,6 +1760,7 @@ export function ListDetailPage() {
             <Stack spacing={2.5} sx={{ pt: 1 }}>
               <TextField
                 label="Название"
+                autoComplete="off"
                 value={formData.name}
                 onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
                 error={Boolean(formErrors.name)}
@@ -1746,6 +1770,7 @@ export function ListDetailPage() {
 
               <TextField
                 label="Описание"
+                autoComplete="off"
                 value={formData.description}
                 onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
                 error={Boolean(formErrors.description)}
@@ -1759,6 +1784,7 @@ export function ListDetailPage() {
                   <TextField
                     select
                     label="Приоритет"
+                    autoComplete="off"
                     value={formData.priority}
                     onChange={(event) => setFormData((prev) => ({ ...prev, priority: event.target.value }))}
                     error={Boolean(formErrors.priority)}
@@ -1773,6 +1799,7 @@ export function ListDetailPage() {
                   <TextField
                     label="Дедлайн"
                     type="date"
+                    autoComplete="off"
                     value={formData.deadline}
                     onChange={(event) => setFormData((prev) => ({ ...prev, deadline: event.target.value }))}
                     error={Boolean(formErrors.deadline)}
@@ -1787,6 +1814,7 @@ export function ListDetailPage() {
                   <TextField
                     select
                     label="Единица"
+                    autoComplete="off"
                     value={formData.unit}
                     onChange={(event) => setFormData((prev) => ({ ...prev, unit: event.target.value }))}
                     error={Boolean(formErrors.unit)}
@@ -1801,6 +1829,7 @@ export function ListDetailPage() {
                   <TextField
                     label="Цена"
                     type="number"
+                    autoComplete="off"
                     value={formData.price}
                     onChange={(event) => updateShoppingValue('price', event.target.value)}
                     error={Boolean(formErrors.price)}
@@ -1811,6 +1840,7 @@ export function ListDetailPage() {
                   <TextField
                     label="Стоимость"
                     type="number"
+                    autoComplete="off"
                     value={formData.cost}
                     onChange={(event) => updateShoppingValue('cost', event.target.value)}
                     error={Boolean(formErrors.cost)}
@@ -1821,6 +1851,7 @@ export function ListDetailPage() {
                   <TextField
                     label="Количество"
                     type="number"
+                    autoComplete="off"
                     value={formData.count}
                     onChange={(event) => updateShoppingValue('count', event.target.value)}
                     error={Boolean(formErrors.count)}
