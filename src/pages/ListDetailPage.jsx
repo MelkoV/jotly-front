@@ -1625,7 +1625,7 @@ export function ListDetailPage() {
             sx={{
               position: 'fixed',
               right: { xs: 16, sm: 24 },
-              bottom: { xs: 16, sm: 24 },
+              bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', sm: 24 },
               zIndex: (theme) => theme.zIndex.fab ?? theme.zIndex.tooltip,
               boxShadow: '0 14px 28px rgba(32, 101, 209, 0.28)',
             }}
