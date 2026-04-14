@@ -192,6 +192,7 @@ const CreateListDialog = memo(function CreateListDialog({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
+      scroll="body"
       PaperProps={{
         component: 'form',
         onSubmit: handleSubmit,

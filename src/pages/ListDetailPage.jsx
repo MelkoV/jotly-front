@@ -18,6 +18,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Fab,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -33,7 +34,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import templateIcon from '../assets/list-icons/list-kind-template.svg'
 import regularIcon from '../assets/list-icons/list-kind-regular.svg'
@@ -435,6 +436,7 @@ const EditListDialog = memo(function EditListDialog({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
+      scroll="body"
       PaperProps={{
         component: 'form',
         onSubmit: handleSubmit,
@@ -510,6 +512,8 @@ export function ListDetailPage() {
   const [cloneFormData, setCloneFormData] = useState(initialCloneFormData)
   const [cloneFormErrors, setCloneFormErrors] = useState({})
   const [cloneState, setCloneState] = useState(initialCreateFeedback)
+  const createButtonRef = useRef(null)
+  const [isCreateButtonVisible, setIsCreateButtonVisible] = useState(true)
 
   useDocumentTitle(listModel?.name ?? 'Список')
 
@@ -556,6 +560,28 @@ export function ListDetailPage() {
   const editingItem = isEditing ? items.find((item) => item.id === editingItemId) ?? null : null
   const isCompletedEditingItem = Boolean(editingItem?.isCompleted)
   const isOwner = Boolean(listModel?.ownerId && currentUserId && listModel.ownerId === currentUserId)
+
+  useEffect(() => {
+    if (!canEdit || !createButtonRef.current || typeof IntersectionObserver === 'undefined') {
+      setIsCreateButtonVisible(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsCreateButtonVisible(entry?.isIntersecting ?? true)
+      },
+      {
+        threshold: 0.1,
+      },
+    )
+
+    observer.observe(createButtonRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [canEdit])
 
   const updateShoppingValue = (field, rawValue) => {
     setFormData((prev) => {
@@ -1503,9 +1529,11 @@ export function ListDetailPage() {
             >
               <Typography variant="h3">Элементы списка</Typography>
               {canEdit ? (
-                <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openCreateDialog}>
-                  Создать
-                </Button>
+                <Box ref={createButtonRef}>
+                  <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openCreateDialog}>
+                    Создать
+                  </Button>
+                </Box>
               ) : null}
             </Stack>
 
@@ -1589,11 +1617,29 @@ export function ListDetailPage() {
           </Paper>
         ) : null}
 
+        {canEdit && !isCreateButtonVisible && !isCreateDialogOpen ? (
+          <Fab
+            color="primary"
+            aria-label="Добавить элемент списка"
+            onClick={openCreateDialog}
+            sx={{
+              position: 'fixed',
+              right: { xs: 16, sm: 24 },
+              bottom: { xs: 16, sm: 24 },
+              zIndex: (theme) => theme.zIndex.fab ?? theme.zIndex.tooltip,
+              boxShadow: '0 14px 28px rgba(32, 101, 209, 0.28)',
+            }}
+          >
+            <AddRoundedIcon />
+          </Fab>
+        ) : null}
+
         <Dialog
           open={isCloneDialogOpen}
           onClose={closeCloneDialog}
           fullWidth
           maxWidth="sm"
+          scroll="body"
           PaperProps={{
             component: 'form',
             onSubmit: handleCloneSubmit,
@@ -1638,6 +1684,7 @@ export function ListDetailPage() {
           onClose={closeShareDialog}
           fullWidth
           maxWidth="sm"
+          scroll="body"
           PaperProps={{
             component: 'form',
             onSubmit: handleShareSubmit,
@@ -1718,6 +1765,7 @@ export function ListDetailPage() {
           onClose={closeDeleteListDialog}
           fullWidth
           maxWidth="sm"
+          scroll="body"
           PaperProps={{
             sx: { borderRadius: 1.5 },
           }}
@@ -1797,6 +1845,7 @@ export function ListDetailPage() {
           onClose={closeCreateDialog}
           fullWidth
           maxWidth="sm"
+          scroll="body"
           PaperProps={{
             component: 'form',
             onSubmit: handleCreateSubmit,
