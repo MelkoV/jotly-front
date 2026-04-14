@@ -361,6 +361,13 @@ export function ListPage() {
     })
 
     if (result.ok) {
+      closeCreateDialog()
+
+      if (result.data?.id) {
+        navigate(`/workspace/${result.data.id}`)
+        return { ok: true }
+      }
+
       if (page === 1) {
         await fetchItems({
           page: 1,
@@ -369,7 +376,7 @@ export function ListPage() {
       } else {
         setPage(1)
       }
-      closeCreateDialog()
+
       return { ok: true }
     }
 
@@ -379,7 +386,7 @@ export function ListPage() {
       is_template: 'isTemplate',
     }),
     }
-  }, [closeCreateDialog, createItem, fetchItems, filters, page])
+  }, [closeCreateDialog, createItem, fetchItems, filters, navigate, page])
 
   const listRows = useMemo(() => {
     if (items.length === 0) {

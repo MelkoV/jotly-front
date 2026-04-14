@@ -255,19 +255,21 @@ function normalizeDeadlineForInput(deadline) {
   return `${year}-${month}-${day}`
 }
 
-function isToday(deadline) {
+function isTodayOrPast(deadline) {
   if (!deadline) return false
 
   const parsedDate = new Date(deadline)
   if (Number.isNaN(parsedDate.getTime())) return false
 
   const today = new Date()
-
-  return (
-    parsedDate.getFullYear() === today.getFullYear() &&
-    parsedDate.getMonth() === today.getMonth() &&
-    parsedDate.getDate() === today.getDate()
+  const deadlineDateOnly = new Date(
+    parsedDate.getFullYear(),
+    parsedDate.getMonth(),
+    parsedDate.getDate(),
   )
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  return deadlineDateOnly <= todayDateOnly
 }
 
 function getEmptyStateColSpan(listType) {
@@ -1083,10 +1085,10 @@ export function ListDetailPage() {
                       sx={{
                         color: item.isCompleted
                           ? 'text.disabled'
-                          : isToday(item.deadline)
+                          : isTodayOrPast(item.deadline)
                             ? 'error.main'
                             : 'text.secondary',
-                        fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
+                        fontWeight: item.isCompleted ? 400 : isTodayOrPast(item.deadline) ? 700 : 500,
                       }}
                     >
                       Дедлайн: {formatDeadline(item.deadline)}
@@ -1151,10 +1153,10 @@ export function ListDetailPage() {
                 sx={{
                   color: item.isCompleted
                     ? 'text.disabled'
-                    : isToday(item.deadline)
+                    : isTodayOrPast(item.deadline)
                       ? 'error.main'
                       : 'text.secondary',
-                  fontWeight: item.isCompleted ? 400 : isToday(item.deadline) ? 700 : 500,
+                  fontWeight: item.isCompleted ? 400 : isTodayOrPast(item.deadline) ? 700 : 500,
                 }}
               >
                 {formatDeadline(item.deadline)}

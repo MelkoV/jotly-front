@@ -72,22 +72,28 @@ const workflowCards = [
 
 const slides = [
   {
-    title: 'Workspace overview',
-    description: 'A calm command center for teams that need clarity without clutter.',
+    title: 'Пространство',
+    description: 'Организуйте комфортную работу с нужными списками',
     image:
-      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80',
+      '/img/1.png',
   },
   {
-    title: 'Focused collaboration',
-    description: 'Clean product surfaces with enough visual structure to keep everyone aligned.',
+    title: 'Сфокусируйтесь на главном',
+    description: 'Всё важное теперь всегда под рукой',
     image:
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80',
+      '/img/2.png',
   },
   {
-    title: 'Modern planning flow',
-    description: 'A placeholder visual for release planning, task curation, and fast cross-team review.',
+    title: 'Работайте совместно',
+    description: 'Делитесь списками для совместной работы',
     image:
-      'https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=1600&q=80',
+      '/img/3.png',
+  },
+  {
+    title: 'Ничего не потеряется',
+    description: 'Записывайте каждую идею, чтобы потом к ней вернуться',
+    image:
+      '/img/4.png',
   },
 ]
 
@@ -175,15 +181,7 @@ export function LandingPage() {
                           }}
                         >
                           <Stack spacing={1.25} sx={{ maxWidth: 420, color: '#fff' }}>
-                            <Chip
-                              label="Placeholder slide"
-                              sx={{
-                                alignSelf: 'flex-start',
-                                bgcolor: 'rgba(255,255,255,0.16)',
-                                color: '#fff',
-                                borderRadius: 2,
-                              }}
-                            />
+
                             <Typography variant="h3" sx={{ color: '#fff', maxWidth: 420 }}>
                               {slide.title}
                             </Typography>
