@@ -1,6 +1,6 @@
 # Jotly Front
 
-Frontend-приложение Jotly на `React + Vite + MUI`.
+Frontend-приложение [Jotly](https://jotly.ru) на `React + Vite + MUI`.
 
 ## Установка
 
@@ -85,8 +85,8 @@ src/
 
 Ключевые точки:
 
-- [src/services/apiClient.js](D:\projects\jotly\jotly-front\src\services\apiClient.js) — базовая настройка `axios`
-- [src/store/authStore.js](D:\projects\jotly\jotly-front\src\store\authStore.js) — авторизация и профиль
-- [src/store/listStore.js](D:\projects\jotly\jotly-front\src\store\listStore.js) — списки рабочего пространства
-- [src/pages/ListPage.jsx](D:\projects\jotly\jotly-front\src\pages\ListPage.jsx) — страница доступных списков
-- [src/pages/ListDetailPage.jsx](D:\projects\jotly\jotly-front\src\pages\ListDetailPage.jsx) — страница просмотра и редактирования списка
+- `src/services/apiClient.js` — базовая настройка `axios`
+- `src/store/authStore.js` — авторизация и профиль
+- `src/store/listStore.js` — списки рабочего пространства
+- `src/pages/ListPage.jsx` — страница доступных списков
+- `src/pages/ListDetailPage.jsx` — страница просмотра и редактирования списка
