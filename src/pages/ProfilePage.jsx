@@ -1,23 +1,21 @@
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded'
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded'
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded'
 import {
   Alert,
   Avatar,
   Box,
   Button,
-  Chip,
   Grid,
   Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
-import { mockUser } from '../data/mockItems'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAuthStore } from '../store/authStore'
 
 function validateName(name) {
@@ -35,6 +33,8 @@ function validatePassword(payload) {
 }
 
 export function ProfilePage() {
+  useDocumentTitle('Профиль')
+
   const navigate = useNavigate()
   const {
     user,
@@ -44,7 +44,11 @@ export function ProfilePage() {
     profileState,
     passwordState,
   } = useAuthStore()
-  const currentUser = user ?? mockUser
+  const currentUser = user ?? {
+    name: 'Пользователь',
+    email: '',
+    avatar: null,
+  }
   const currentUserAvatar =
     currentUser.avatar ??
     currentUser.avatar_url ??
@@ -61,6 +65,10 @@ export function ProfilePage() {
     confirmPassword: '',
   })
   const [passwordErrors, setPasswordErrors] = useState({})
+
+  useEffect(() => {
+    setName(currentUser.name)
+  }, [currentUser.name])
 
   const handleSignOut = async () => {
     await signOut()

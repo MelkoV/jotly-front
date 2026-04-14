@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Grid,
   Paper,
   Stack,
@@ -14,6 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import { useAuthStore } from '../store/authStore'
 
@@ -31,6 +31,8 @@ function validateForm(formData) {
 }
 
 export function SignUpPage() {
+  useDocumentTitle('Регистрация')
+
   const navigate = useNavigate()
   const location = useLocation()
   const { signUp, signUpState, resetSignUpState } = useAuthStore()
@@ -44,13 +46,6 @@ export function SignUpPage() {
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      repeatPassword: '',
-    })
-    setErrors({})
     resetSignUpState()
   }, [resetSignUpState])
 

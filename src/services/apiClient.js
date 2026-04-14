@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStorage'
 
-const API_BASE_URL = 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 const REFRESH_PATH = '/api/v1/user/refresh-token'
 
 let refreshPromise = null

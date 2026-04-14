@@ -1,15 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { useAuthStore } from '../store/authStore'
-import { LandingPage } from '../pages/LandingPage'
-import { ListPage } from '../pages/ListPage'
-import { ListDetailPage } from '../pages/ListDetailPage'
-import { PublicListInfoPage } from '../pages/PublicListInfoPage'
-import { ProfilePage } from '../pages/ProfilePage'
-import { ContactPage } from '../pages/ContactPage'
-import { SignInPage } from '../pages/SignInPage'
-import { SignUpPage } from '../pages/SignUpPage'
-import { NotFoundPage } from '../pages/NotFoundPage'
 
 function ProtectedRoute() {
   const { isAuthenticated, isBootstrapping } = useAuthStore()
@@ -34,25 +25,79 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <LandingPage /> },
-      { path: 'j/:short_url', element: <PublicListInfoPage /> },
-      { path: 'contact', element: <ContactPage /> },
+      {
+        index: true,
+        lazy: async () => {
+          const { LandingPage } = await import('../pages/LandingPage')
+          return { Component: LandingPage }
+        },
+      },
+      {
+        path: 'j/:short_url',
+        lazy: async () => {
+          const { PublicListInfoPage } = await import('../pages/PublicListInfoPage')
+          return { Component: PublicListInfoPage }
+        },
+      },
+      {
+        path: 'contact',
+        lazy: async () => {
+          const { ContactPage } = await import('../pages/ContactPage')
+          return { Component: ContactPage }
+        },
+      },
       {
         element: <GuestOnlyRoute />,
         children: [
-          { path: 'sign-in', element: <SignInPage /> },
-          { path: 'sign-up', element: <SignUpPage /> },
+          {
+            path: 'sign-in',
+            lazy: async () => {
+              const { SignInPage } = await import('../pages/SignInPage')
+              return { Component: SignInPage }
+            },
+          },
+          {
+            path: 'sign-up',
+            lazy: async () => {
+              const { SignUpPage } = await import('../pages/SignUpPage')
+              return { Component: SignUpPage }
+            },
+          },
         ],
       },
       {
         element: <ProtectedRoute />,
         children: [
-          { path: 'workspace', element: <ListPage /> },
-          { path: 'workspace/:id', element: <ListDetailPage /> },
-          { path: 'profile', element: <ProfilePage /> },
+          {
+            path: 'workspace',
+            lazy: async () => {
+              const { ListPage } = await import('../pages/ListPage')
+              return { Component: ListPage }
+            },
+          },
+          {
+            path: 'workspace/:id',
+            lazy: async () => {
+              const { ListDetailPage } = await import('../pages/ListDetailPage')
+              return { Component: ListDetailPage }
+            },
+          },
+          {
+            path: 'profile',
+            lazy: async () => {
+              const { ProfilePage } = await import('../pages/ProfilePage')
+              return { Component: ProfilePage }
+            },
+          },
         ],
       },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        path: '*',
+        lazy: async () => {
+          const { NotFoundPage } = await import('../pages/NotFoundPage')
+          return { Component: NotFoundPage }
+        },
+      },
     ],
   },
 ])

@@ -41,6 +41,7 @@ import shoppingIcon from '../assets/list-icons/list-type-shopping.svg'
 import todoIcon from '../assets/list-icons/list-type-todo.svg'
 import wishIcon from '../assets/list-icons/list-type-wish.svg'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import {
   copyListRequest,
@@ -510,7 +511,9 @@ export function ListDetailPage() {
   const [cloneFormErrors, setCloneFormErrors] = useState({})
   const [cloneState, setCloneState] = useState(initialCreateFeedback)
 
-  const loadList = async (signal) => {
+  useDocumentTitle(listModel?.name ?? 'Список')
+
+  const loadList = useCallback(async (signal) => {
     setStatus('loading')
     setMessage('')
 
@@ -528,7 +531,7 @@ export function ListDetailPage() {
       setMessage(getErrorMessage(error))
       throw error
     }
-  }
+  }, [id])
 
   useEffect(() => {
     const abortController = new AbortController()
@@ -540,7 +543,7 @@ export function ListDetailPage() {
     return () => {
       abortController.abort()
     }
-  }, [id])
+  }, [id, loadList])
 
   const typeMeta = listTypeMeta[listModel?.type] ?? {
     label: 'Тип списка',

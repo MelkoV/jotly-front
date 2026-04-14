@@ -1,15 +1,11 @@
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
 import EastRoundedIcon from '@mui/icons-material/EastRounded'
-import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded'
 import {
-  Avatar,
   Box,
   Button,
   Card,
   CardContent,
-  Chip,
   Container,
   Grid,
   IconButton,
@@ -23,6 +19,7 @@ import shoppingIcon from '../assets/list-icons/list-type-shopping.svg'
 import todoIcon from '../assets/list-icons/list-type-todo.svg'
 import wishIcon from '../assets/list-icons/list-type-wish.svg'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 const featureCards = [
   {
@@ -43,12 +40,6 @@ const featureCards = [
       'Отправь друзьям список желаний, чтобы они знали, что тебе подарить',
     icon: wishIcon,
   },
-]
-
-const stats = [
-  { value: '24%', label: 'less operational noise' },
-  { value: '3.2x', label: 'faster project kickoff' },
-  { value: '99%', label: 'first-screen clarity' },
 ]
 
 const workflowCards = [
@@ -98,6 +89,8 @@ const slides = [
 ]
 
 export function LandingPage() {
+  useDocumentTitle('Удобные инструменты работы со списками')
+
   const [activeSlide, setActiveSlide] = useState(0)
 
   useEffect(() => {

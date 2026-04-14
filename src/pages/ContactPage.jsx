@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import { useState } from 'react'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import { createFeedbackRequest } from '../services/feedbackApi'
 
@@ -28,6 +29,8 @@ function validateForm(formData) {
 }
 
 export function ContactPage() {
+  useDocumentTitle('Напишите нам')
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',

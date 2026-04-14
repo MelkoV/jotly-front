@@ -1,10 +1,13 @@
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import SearchOffRoundedIcon from '@mui/icons-material/SearchOffRounded'
-import { Box, Button, Chip, Grid, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Grid, Paper, Stack, Typography } from '@mui/material'
 import { NavLink } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function NotFoundPage() {
+  useDocumentTitle('Не найдено')
+
   return (
     <PageSection
       eyebrow="404"

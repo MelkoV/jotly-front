@@ -3,6 +3,7 @@ import { Alert, Avatar, Box, Button, Paper, Stack, Typography } from '@mui/mater
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PageSection } from '../components/common/PageSection'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { NotFoundPage } from './NotFoundPage'
 import { fetchPublicListInfoRequest, joinListRequest } from '../services/listsApi'
 import { useAuthStore } from '../store/authStore'
@@ -41,6 +42,8 @@ export function PublicListInfoPage() {
   const [message, setMessage] = useState('')
   const [listInfo, setListInfo] = useState(null)
   const [joinState, setJoinState] = useState('idle')
+
+  useDocumentTitle(`Присоединиться к ${listInfo?.name ?? 'списку'}`)
 
   useEffect(() => {
     const abortController = new AbortController()

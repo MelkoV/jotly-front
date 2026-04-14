@@ -104,7 +104,7 @@ export const useAuthStore = create((set, get) => ({
   signOut: async () => {
     try {
       await logoutRequest()
-    } catch (error) {
+    } catch {
       // Local sign-out still completes even if the backend session is already invalid.
     } finally {
       clearAccessToken()

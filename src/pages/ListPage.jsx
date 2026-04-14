@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  Grid,
   IconButton,
   InputAdornment,
   Pagination,
@@ -37,6 +36,7 @@ import regularIcon from '../assets/list-icons/list-kind-regular.svg'
 import shoppingIcon from '../assets/list-icons/list-type-shopping.svg'
 import todoIcon from '../assets/list-icons/list-type-todo.svg'
 import wishIcon from '../assets/list-icons/list-type-wish.svg'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { mapApiFieldErrors } from '../services/apiValidation'
 import { useListStore } from '../store/listStore'
 
@@ -291,6 +291,8 @@ const CreateListDialog = memo(function CreateListDialog({
 })
 
 export function ListPage() {
+  useDocumentTitle('Рабочее пространство')
+
   const {
     items,
     status,
@@ -340,17 +342,17 @@ export function ListPage() {
     cancelFetchItems()
   }, [cancelFetchItems])
 
-  const openCreateDialog = () => {
+  const openCreateDialog = useCallback(() => {
     resetCreateState()
     setIsCreateDialogOpen(true)
-  }
+  }, [resetCreateState])
 
-  const closeCreateDialog = () => {
+  const closeCreateDialog = useCallback(() => {
     if (createState.status === 'loading') return
 
     setIsCreateDialogOpen(false)
     resetCreateState()
-  }
+  }, [createState.status, resetCreateState])
 
   const handleCreateSubmit = useCallback(async (nextFormData) => {
     const result = await createItem({
