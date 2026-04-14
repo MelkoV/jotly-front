@@ -1875,53 +1875,69 @@ export function ListDetailPage() {
 
               {listModel?.type === 'shopping' ? (
                 <Stack spacing={2}>
-                  <TextField
-                    select
-                    label="Единица"
-                    autoComplete="off"
-                    value={formData.unit}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, unit: event.target.value }))}
-                    error={Boolean(formErrors.unit)}
-                    helperText={formErrors.unit}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gap: 2,
+                    }}
                   >
-                    <MenuItem value="">Не выбрана</MenuItem>
-                    <MenuItem value="thing">{unitLabelMap.thing}</MenuItem>
-                    <MenuItem value="package">{unitLabelMap.package}</MenuItem>
-                    <MenuItem value="kg">{unitLabelMap.kg}</MenuItem>
-                  </TextField>
+                    <TextField
+                      label="Количество"
+                      type="number"
+                      autoComplete="off"
+                      value={formData.count}
+                      onChange={(event) => updateShoppingValue('count', event.target.value)}
+                      error={Boolean(formErrors.count)}
+                      helperText={formErrors.count}
+                      slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
+                    />
 
-                  <TextField
-                    label="Цена"
-                    type="number"
-                    autoComplete="off"
-                    value={formData.price}
-                    onChange={(event) => updateShoppingValue('price', event.target.value)}
-                    error={Boolean(formErrors.price)}
-                    helperText={formErrors.price}
-                    slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
-                  />
+                    <TextField
+                      select
+                      label="Единица"
+                      autoComplete="off"
+                      value={formData.unit}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, unit: event.target.value }))}
+                      error={Boolean(formErrors.unit)}
+                      helperText={formErrors.unit}
+                    >
+                      <MenuItem value="">Не выбрана</MenuItem>
+                      <MenuItem value="thing">{unitLabelMap.thing}</MenuItem>
+                      <MenuItem value="package">{unitLabelMap.package}</MenuItem>
+                      <MenuItem value="kg">{unitLabelMap.kg}</MenuItem>
+                    </TextField>
+                  </Box>
 
-                  <TextField
-                    label="Стоимость"
-                    type="number"
-                    autoComplete="off"
-                    value={formData.cost}
-                    onChange={(event) => updateShoppingValue('cost', event.target.value)}
-                    error={Boolean(formErrors.cost)}
-                    helperText={formErrors.cost}
-                    slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
-                  />
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gap: 2,
+                    }}
+                  >
+                    <TextField
+                      label="Цена"
+                      type="number"
+                      autoComplete="off"
+                      value={formData.price}
+                      onChange={(event) => updateShoppingValue('price', event.target.value)}
+                      error={Boolean(formErrors.price)}
+                      helperText={formErrors.price}
+                      slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
+                    />
 
-                  <TextField
-                    label="Количество"
-                    type="number"
-                    autoComplete="off"
-                    value={formData.count}
-                    onChange={(event) => updateShoppingValue('count', event.target.value)}
-                    error={Boolean(formErrors.count)}
-                    helperText={formErrors.count}
-                    slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
-                  />
+                    <TextField
+                      label="Стоимость"
+                      type="number"
+                      autoComplete="off"
+                      value={formData.cost}
+                      onChange={(event) => updateShoppingValue('cost', event.target.value)}
+                      error={Boolean(formErrors.cost)}
+                      helperText={formErrors.cost}
+                      slotProps={{ htmlInput: { step: '0.001', min: '0' } }}
+                    />
+                  </Box>
                 </Stack>
               ) : null}
 
